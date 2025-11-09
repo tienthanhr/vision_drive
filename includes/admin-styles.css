@@ -1,0 +1,132 @@
+/* CSS Variables */
+:root {
+    --primary-blue: #00bcd4;
+    --secondary-blue: #4fc3f7;
+    --dark-gray: #424242;
+    --light-gray: #f5f5f5;
+    --text-dark: #2c2c2c;
+    --text-light: #666;
+    --white: #ffffff;
+}
+
+/* Typography - ensure consistent font across admin pages */
+body,
+h1, h2, h3, h4, h5, h6,
+table, th, td,
+a, button, input, select, textarea,
+.btn, .form-control, .form-select, .form-label,
+.action-btn, .status-badge, .badge {
+    font-family: 'Montserrat', sans-serif;
+}
+
+/* Default centering for action button rows inside table cells */
+td .action-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+/* Admin Sidebar Styles - Copy from styles.css */
+.sidebar {
+    width: 250px;
+    background: white;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    padding: 20px 0;
+    min-height: 100vh;
+}
+
+.sidebar-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-menu li {
+    margin-bottom: 2px;
+}
+
+.sidebar-menu a {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 25px;
+    text-decoration: none;
+    color: var(--text-dark);
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
+    font-size: 14px;
+}
+
+.sidebar-menu a:hover {
+    background: var(--light-gray);
+    border-left-color: var(--primary-blue);
+}
+
+.sidebar-menu a.active {
+    background: var(--primary-blue);
+    color: white;
+    border-left-color: var(--secondary-blue);
+}
+
+.sidebar-menu .icon {
+    width: 20px;
+    height: 20px;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Android Emoji', 'EmojiSymbols', sans-serif;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.sidebar-menu span:not(.icon) {
+    font-weight: 500;
+    font-size: 14px;
+}
+
+/* Emoji Support */
+.icon, .emoji {
+    font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Android Emoji', 'EmojiSymbols', 'Montserrat', sans-serif;
+    font-variant-emoji: emoji;
+    -webkit-font-feature-settings: "liga" on, "calt" on;
+    font-feature-settings: "liga" on, "calt" on;
+}
+
+/* Admin Main Content Adjustment */
+.admin-main-content {
+    margin-left: 260px;
+    min-height: 100vh;
+    background: #f8f9fa;
+}
+
+.admin-content {
+    padding: 30px;
+}
+
+/* Responsive Admin */
+@media (max-width: 992px) {
+    .dashboard-container {
+        flex-direction: column;
+    }
+    .sidebar {
+        width: 100%;
+        min-height: auto;
+        position: relative;
+    }
+    .main-content {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 576px) {
+    .main-content {
+        padding: 15px;
+    }
+    .sidebar-menu a {
+        padding: 12px 16px;
+    }
+}

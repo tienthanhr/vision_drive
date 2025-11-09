@@ -1,0 +1,213 @@
+<?php
+session_start();
+
+// Check if admin is logged in
+if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
+    header('Location: admin-login.php');
+    exit();
+}
+
+require_once 'config/database.php';
+
+$message = '';
+$messageType = '';
+$db = new VisionDriveDatabase();
+
+// Get courses and campuses for dropdowns
+$courses = $db->getCourses();
+$campuses = $db->getCampuses();
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $courseId = $_POST['course_id'] ?? '';
+    $campusId = $_POST['campus_id'] ?? '';
+    $sessionDate = $_POST['session_date'] ?? '';
+    $startTime = $_POST['start_time'] ?? '';
+    $endTime = $_POST['end_time'] ?? '';
+    $maxParticipants = $_POST['max_participants'] ?? '';
+    $instructorName = $_POST['instructor_name'] ?? '';
+    $status = $_POST['status'] ?? 'scheduled';
+    $scheduleType = $_POST['schedule_type'] ?? 'one-off';
+    $recurrenceFrequency = $_POST['recurrence_frequency'] ?? '';
+    $recurrenceCount = $_POST['recurrence_count'] ?? 1;
+    
+    if (empty($courseId) || empty($campusId) || empty($sessionDate) || empty($startTime) || empty($endTime)) {
+        $message = 'Please fill in all required fields';
+        $messageType = 'error';
+    } elseif ($startTime >= $endTime) {
+        $message = 'End time must be after start time';
+        $messageType = 'error';
+    } else {
+        try {
+            $conn = $db->getConnection();
+            $conn->beginTransaction();
+            
+            if ($scheduleType === 'one-off') {
+                // Create single schedule
+                $stmt = $conn->prepare("
+                    INSERT INTO training_sessions (course_id, campus_id, session_date, start_time, end_time, max_participants, instructor_name, status) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ");
+                $stmt->execute([$courseId, $campusId, $sessionDate, $startTime, $endTime, $maxParticipants, $instructorName, $status]);
+                
+                $message = 'Schedule created successfully';
+                $messageType = 'success';
+            } else {
+                // Create recurring schedules
+                $startDate = new DateTime($sessionDate);
+                $createdCount = 0;
+                
+                for ($i = 0; $i < $recurrenceCount; $i++) {
+                    $currentDate = clone $startDate;
+                    
+                    // Calculate next date based on frequency
+                    switch ($recurrenceFrequency) {
+                        case 'daily':
+                            $currentDate->add(new DateInterval('P' . $i . 'D'));
+                            break;
+                        case 'weekly':
+                            $currentDate->add(new DateInterval('P' . ($i * 7) . 'D'));
+                            break;
+                        case 'monthly':
+                            $currentDate->add(new DateInterval('P' . $i . 'M'));
+                            break;
+                    }
+                    
+                    $stmt = $conn->prepare("
+                        INSERT INTO training_sessions (course_id, campus_id, session_date, start_time, end_time, max_participants, instructor_name, status) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    ");
+                    $stmt->execute([$courseId, $campusId, $currentDate->format('Y-m-d'), $startTime, $endTime, $maxParticipants, $instructorName, $status]);
+                    $createdCount++;
+                }
+                
+                $message = "Successfully created {$createdCount} recurring schedules";
+                $messageType = 'success';
+            }
+            
+            $conn->commit();
+            
+        } catch (Exception $e) {
+            $conn->rollBack();
+            $message = 'Error creating schedule: ' . $e->getMessage();
+            $messageType = 'error';
+        }
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Schedule - Vision Drive Admin</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <nav class="admin-sidebar">
+            <div class="logo">
+                <h2>Vision Drive</h2>
+                <p>Admin Panel</p>
+            </div>
+            
+            <ul class="nav-menu">
+                <li><a href="admin-dashboard.php"><i class="fas fa-chart-bar"></i>Dashboard</a></li>
+                <li><a href="admin-courses.php"><i class="fas fa-book"></i>Courses</a></li>
+                <li><a href="admin-campuses.php"><i class="fas fa-building"></i>Campuses</a></li>
+                <li><a href="admin-schedules.php" class="active"><i class="fas fa-calendar"></i>Schedules</a></li>
+                <li><a href="admin-students.php"><i class="fas fa-users"></i>Students & Documents</a></li>
+                <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i>Logout</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="admin-content">
+            <header class="content-header">
+                <h1>Add New Schedule</h1>
+                <nav class="breadcrumb">
+                    <span>Admin</span> > <a href="admin-schedules.php">Schedules</a> > Add
+                </nav>
+            </header>
+
+            <div class="content-body">
+                <?php if ($message): ?>
+                    <div class="alert <?= $messageType === 'error' ? 'alert-error' : 'alert-success' ?>">
+                        <?= htmlspecialchars($message) ?>
+                    </div>
+                <?php endif; ?>
+
+                <div class="form-container">
+                    <form method="POST" class="admin-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="course_id">Course *</label>
+                                <select id="course_id" name="course_id" required>
+                                    <option value="">Select a course</option>
+                                    <?php foreach ($courses as $course): ?>
+                                        <option value="<?= $course['id'] ?>" <?= ($_POST['course_id'] ?? '') == $course['id'] ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($course['name']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="campus_id">Campus *</label>
+                                <select id="campus_id" name="campus_id" required>
+                                    <option value="">Select a campus</option>
+                                    <?php foreach ($campuses as $campus): ?>
+                                        <option value="<?= $campus['id'] ?>" <?= ($_POST['campus_id'] ?? '') == $campus['id'] ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($campus['name']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="session_date">Session Date *</label>
+                            <input type="date" id="session_date" name="session_date" value="<?= $_POST['session_date'] ?? '' ?>" required min="<?= date('Y-m-d') ?>">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="start_time">Start Time *</label>
+                                <input type="time" id="start_time" name="start_time" value="<?= $_POST['start_time'] ?? '09:00' ?>" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="end_time">End Time *</label>
+                                <input type="time" id="end_time" name="end_time" value="<?= $_POST['end_time'] ?? '17:00' ?>" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="max_participants">Max Participants *</label>
+                                <input type="number" id="max_participants" name="max_participants" value="<?= $_POST['max_participants'] ?? '10' ?>" min="1" max="50" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="instructor_name">Instructor Name</label>
+                                <input type="text" id="instructor_name" name="instructor_name" value="<?= $_POST['instructor_name'] ?? '' ?>" placeholder="Optional">
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Create Schedule
+                            </button>
+                            <a href="admin-schedules.php" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Schedules
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
