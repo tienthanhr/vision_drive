@@ -539,11 +539,16 @@ class VisionDriveDatabase {
     public function uploadDocument($userId, $documentType, $originalName, $filePath, $fileSize, $mimeType) {
         try {
             $stmt = $this->db->prepare("
-                INSERT INTO documents (user_id, document_type, original_name, file_path, file_size, mime_type, uploaded_at) 
+                INSERT INTO documents (user_id, document_type, file_name, file_path, file_size, mime_type, uploaded_at) 
                 VALUES (?, ?, ?, ?, ?, ?, NOW())
             ");
-            return $stmt->execute([$userId, $documentType, $originalName, $filePath, $fileSize, $mimeType]);
+            $result = $stmt->execute([$userId, $documentType, $originalName, $filePath, $fileSize, $mimeType]);
+            if (!$result) {
+                error_log("Upload document failed - PDO error: " . print_r($stmt->errorInfo(), true));
+            }
+            return $result;
         } catch (Exception $e) {
+            error_log("Upload document exception: " . $e->getMessage());
             return false;
         }
     }

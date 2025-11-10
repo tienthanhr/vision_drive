@@ -72,6 +72,8 @@ try {
         document_type VARCHAR(50),
         original_name VARCHAR(255),
         file_path VARCHAR(500),
+        file_size INTEGER,
+        mime_type VARCHAR(100),
         uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(user_id)
     )");

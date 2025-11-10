@@ -74,7 +74,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['document'])) {
             } else {
                 // Delete uploaded file if database insert failed
                 unlink($filePath);
-                $message = 'Failed to save document info to database';
+                error_log("Failed to save document - userId: $userId, type: $documentType, file: $originalName, size: $fileSize, mime: $mimeType");
+                $message = 'Failed to save document info to database. Check error logs.';
                 $messageType = 'error';
             }
         } else {

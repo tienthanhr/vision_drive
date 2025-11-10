@@ -218,14 +218,13 @@ if (isset($allowedSorts[$sort])) {
 
         .search-container {
             position: relative;
-            margin-bottom: 20px;
         }
 
         .search-input {
-            padding: 12px 40px 12px 15px;
+            padding: 10px 40px 10px 15px;
             border: 1px solid #ddd;
-            border-radius: 8px;
-            width: 300px;
+            border-radius: 20px;
+            width: 250px;
             font-size: 14px;
             background: #f8f9fa;
         }
@@ -389,21 +388,21 @@ if (isset($allowedSorts[$sort])) {
             <div class="content-section">
                 <div class="section-header">
                     <h2 class="section-title">All Students</h2>
-                    <a href="admin-add-student.php" class="add-btn">Add new student</a>
-                </div>
-
-                <!-- Search -->
-                <div class="search-container">
-                    <form method="GET" style="margin: 0;">
-                        <input 
-                            type="text" 
-                            name="search" 
-                            class="search-input" 
-                            placeholder="Search..."
-                            value="<?= htmlspecialchars($searchTerm) ?>"
-                        >
-                        <span class="search-icon">🔍</span>
-                    </form>
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <div class="search-container">
+                            <form method="GET" style="margin: 0;">
+                                <input 
+                                    type="text" 
+                                    name="search" 
+                                    class="search-input" 
+                                    placeholder="Search..."
+                                    value="<?= htmlspecialchars($searchTerm) ?>"
+                                >
+                                <span class="search-icon">🔍</span>
+                            </form>
+                        </div>
+                        <a href="admin-add-student.php" class="add-btn">Add new student</a>
+                    </div>
                 </div>
 
                 <!-- Students Table -->
@@ -501,7 +500,7 @@ if (isset($allowedSorts[$sort])) {
                                     </td>
                                     <td>
                                         <div class="action-buttons">
-                                            <button class="action-btn btn-info" onclick="toggleDocuments(<?= $student['user_id'] ?>)">
+                                            <button type="button" class="action-btn btn-info" onclick="toggleDocuments(<?= $student['user_id'] ?>)">
                                                 Documents (<?= $student['document_count'] ?? 0 ?>)
                                             </button>
                                             <a href="admin-upload-document.php?user_id=<?= $student['user_id'] ?>" class="action-btn btn-success">Upload</a>

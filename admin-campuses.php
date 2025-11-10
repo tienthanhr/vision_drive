@@ -189,14 +189,13 @@ if (isset($allowedSorts[$sort])) {
 
         .search-container {
             position: relative;
-            margin-bottom: 20px;
         }
 
         .search-input {
-            padding: 12px 40px 12px 15px;
+            padding: 10px 40px 10px 15px;
             border: 1px solid #ddd;
-            border-radius: 8px;
-            width: 300px;
+            border-radius: 20px;
+            width: 250px;
             font-size: 14px;
             background: #f8f9fa;
         }
@@ -339,44 +338,29 @@ if (isset($allowedSorts[$sort])) {
                 <?php endif; ?>
                 <div class="section-header">
                     <h2 class="section-title">All Campuses</h2>
-                    <a href="admin-add-campus.php" class="add-btn">Add new campus</a>
-                </div>
-
-                <!-- Search -->
-                <div class="search-container">
-                    <form method="GET" style="margin: 0;">
-                        <input 
-                            type="text" 
-                            name="search" 
-                            class="search-input" 
-                            placeholder="Search..."
-                            value="<?= htmlspecialchars($searchTerm) ?>"
-                        >
-                        <span class="search-icon">🔍</span>
-                    </form>
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <div class="search-container">
+                            <form method="GET" style="margin: 0;">
+                                <input 
+                                    type="text" 
+                                    name="search" 
+                                    class="search-input" 
+                                    placeholder="Search..."
+                                    value="<?= htmlspecialchars($searchTerm) ?>"
+                                >
+                                <span class="search-icon">🔍</span>
+                            </form>
+                        </div>
+                        <a href="admin-add-campus.php" class="add-btn">Add new campus</a>
+                    </div>
                 </div>
 
                 <!-- Campuses Table -->
                 <form method="POST" onsubmit="return confirmBulkDelete();">
                     <?php csrf_input(); ?>
+                    <input type="hidden" name="bulk_action" value="delete">
                     <div class="mb-3">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <select name="bulk_action" class="form-select form-select-sm d-inline-block w-auto">
-                                    <option value="delete">Delete</option>
-                                    <option value="restore">Restore</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="statusFilter" class="form-label mb-1">Status</label>
-                                <select id="statusFilter" class="form-select form-select-sm" onchange="onChangeStatusFilter(this.value)">
-                                    <option value="active" <?= $status==='active'?'selected':'' ?>>Active</option>
-                                    <option value="inactive" <?= $status==='inactive'?'selected':'' ?>>Inactive</option>
-                                    <option value="all" <?= $status==='all'?'selected':'' ?>>All</option>
-                                </select>
-                            </div>
-                        </div>
-                        <button type="submit" class="btn btn-sm btn-danger mt-2">Apply</button>
+                        <button type="submit" class="btn btn-sm btn-danger">Delete Selected</button>
                     </div>
                     <div class="table-responsive">
                         <table class="campuses-table table table-hover align-middle">
