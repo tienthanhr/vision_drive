@@ -1,5 +1,5 @@
 <?php
-// Lấy dữ liệu từ database đơn giản
+// Get simple data from database
 require_once 'config/database.php';
 
 try {
@@ -7,7 +7,7 @@ try {
     $courses = $db->getCourses();
     $campuses = $db->getCampuses();
 } catch (Exception $e) {
-    // Fallback data nếu database lỗi
+    // Fallback data if database error
     $courses = [
         ['id' => 1, 'name' => 'Forklift Operator', 'description' => 'Basic forklift operation training', 'duration' => '8 hours', 'price' => 350],
         ['id' => 2, 'name' => 'Forklift Refresher', 'description' => 'Refresher course for experienced operators', 'duration' => '4 hours', 'price' => 180],

@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-// Kiểm tra đăng nhập admin
+// Check admin authentication
 if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
     header('Location: admin-login.php');
     exit();

@@ -1,5 +1,5 @@
 <?php
-// Lấy tên file hiện tại để highlight menu active
+// Get current filename to highlight active menu
 $current_page = basename($_SERVER['PHP_SELF']);
 ?>
 

@@ -5,7 +5,7 @@ require_once 'config/database.php';
 try {
     $db = new VisionDriveDatabase();
     
-    // Tạo admin với email: admin@visiondrive.nz, password: admin123
+    // Create admin with email: admin@visiondrive.nz, password: admin123
     $adminCreated = $db->createDefaultAdmin('admin@visiondrive.nz', 'admin123');
     
     if ($adminCreated) {
@@ -16,7 +16,7 @@ try {
         echo "Admin already exists or database error\n";
     }
     
-    // Tạo thêm admin với username đơn giản
+    // Create additional admin with simple username
     $adminCreated2 = $db->createDefaultAdmin('admin', 'admin123');
     
     if ($adminCreated2) {

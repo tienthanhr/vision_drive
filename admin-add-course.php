@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-// Kiểm tra đăng nhập admin
+// Check admin authentication
 if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
     header('Location: admin-login.php');
     exit();
@@ -12,7 +12,7 @@ require_once 'config/database.php';
 $success_message = '';
 $error_message = '';
 
-// Xử lý form submission
+// Handle form submission
 if ($_POST) {
     $name = trim($_POST['name'] ?? '');
     $description = trim($_POST['description'] ?? '');

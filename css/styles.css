@@ -615,6 +615,59 @@ body {
         padding: 10px 20px;
         font-size: 14px;
     }
+
+    /* Admin Dashboard Responsive */
+    .dashboard-container {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        min-height: auto;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+
+    .sidebar-menu {
+        display: flex;
+        overflow-x: auto;
+        padding: 10px 0;
+    }
+
+    .sidebar-menu li {
+        margin-bottom: 0;
+        flex-shrink: 0;
+    }
+
+    .sidebar-menu a {
+        padding: 10px 15px;
+        border-left: none;
+        border-bottom: 3px solid transparent;
+        flex-direction: column;
+        gap: 5px;
+        font-size: 12px;
+        min-width: 80px;
+        text-align: center;
+    }
+
+    .sidebar-menu a:hover {
+        border-left-color: transparent;
+        border-bottom-color: var(--primary-blue);
+    }
+
+    .sidebar-menu a.active {
+        border-left-color: transparent;
+        border-bottom-color: var(--secondary-blue);
+    }
+
+    .sidebar-logo {
+        display: none;
+    }
+
+    .main-content {
+        padding: 20px 15px;
+    }
 }
 
 /* Edit Dialog Styles */

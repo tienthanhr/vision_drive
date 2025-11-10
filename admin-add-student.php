@@ -9,6 +9,19 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 
 require_once 'config/database.php';
 
+// CSRF token setup
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+// Helper function for CSRF input
+if (!function_exists('csrf_input')) {
+    function csrf_input() {
+        $token = $_SESSION['csrf_token'] ?? '';
+        echo '<input type="hidden" name="csrf_token" value="' . htmlspecialchars($token, ENT_QUOTES, 'UTF-8') . '">';
+    }
+}
+
 $message = '';
 $messageType = '';
 $db = new VisionDriveDatabase();
@@ -82,12 +95,163 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Add Student - Vision Drive Admin</title>
-    <?php include 'includes/admin-head.php'; ?>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vision Drive - Add Student</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
     <style>
-        .form-container { max-width: 700px; margin: 0 auto; }
-        .admin-form .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        @media (max-width: 768px) { .admin-form .form-row { grid-template-columns: 1fr; } }
+        /* Form Specific Styles - Same as campus form */
+        .form-container {
+            background: white;
+            border-radius: 10px;
+            padding: 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .form-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 30px;
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+            font-size: 16px;
+            letter-spacing: 0.5px;
+        }
+
+        .required {
+            color: var(--danger-red);
+        }
+
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: 'Montserrat', sans-serif;
+            transition: border-color 0.3s;
+            background: #fafafa;
+        }
+
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            background: white;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-help {
+            display: block;
+            font-size: 13px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .form-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 40px;
+        }
+
+        .btn-submit {
+            background: var(--primary-blue);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-submit:hover {
+            background: var(--secondary-blue);
+            transform: translateY(-2px);
+        }
+
+        .btn-cancel {
+            background: var(--light-gray);
+            color: var(--text-dark);
+            padding: 15px 40px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-cancel:hover {
+            background: #e0e0e0;
+        }
+
+        .success-message {
+            background: #e8f5e8;
+            color: var(--success-green);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            font-weight: 500;
+            border-left: 4px solid var(--success-green);
+            text-align: center;
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: var(--danger-red);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            font-weight: 500;
+            border-left: 4px solid var(--danger-red);
+            text-align: center;
+        }
+
+        .page-header {
+            background: white;
+            padding: 30px 0;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .page-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -97,47 +261,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="main-content">
             <div class="page-header">
                 <h1 class="page-title">Add New Student</h1>
-                <nav class="breadcrumb">
-                    <span>Admin</span> > <a href="admin-students.php">Students</a> > Add
-                </nav>
             </div>
 
             <div class="page-content">
                 <?php if ($message): ?>
-                    <div class="alert <?= $messageType === 'error' ? 'alert-error' : 'alert-success' ?>">
+                    <div class="<?= $messageType === 'error' ? 'error-message' : 'success-message' ?>">
                         <?= htmlspecialchars($message) ?>
                     </div>
                 <?php endif; ?>
 
                 <div class="form-container">
-                    <form method="POST" class="admin-form">
+                    <h2 class="form-title">Student Information</h2>
+                    <form method="POST">
                         <?php csrf_input(); ?>
+                        
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="first_name">First Name *</label>
-                                <input type="text" id="first_name" name="first_name" value="<?= htmlspecialchars($_POST['first_name'] ?? '') ?>" required>
+                                <label class="form-label" for="first_name">First Name <span class="required">*</span></label>
+                                <input type="text" id="first_name" name="first_name" class="form-input" value="<?= htmlspecialchars($_POST['first_name'] ?? '') ?>" required>
                             </div>
                             
                             <div class="form-group">
-                                <label for="last_name">Last Name *</label>
-                                <input type="text" id="last_name" name="last_name" value="<?= htmlspecialchars($_POST['last_name'] ?? '') ?>" required>
+                                <label class="form-label" for="last_name">Last Name <span class="required">*</span></label>
+                                <input type="text" id="last_name" name="last_name" class="form-input" value="<?= htmlspecialchars($_POST['last_name'] ?? '') ?>" required>
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label for="email">Email Address *</label>
-                            <input type="email" id="email" name="email" value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" required>
+                            <label class="form-label" for="email">Email Address <span class="required">*</span></label>
+                            <input type="email" id="email" name="email" class="form-input" value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" required>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="phone">Phone Number</label>
-                                <input type="tel" id="phone" name="phone" value="<?= htmlspecialchars($_POST['phone'] ?? '') ?>">
+                                <label class="form-label" for="phone">Phone Number</label>
+                                <input type="tel" id="phone" name="phone" class="form-input" value="<?= htmlspecialchars($_POST['phone'] ?? '') ?>">
                             </div>
                             
                             <div class="form-group">
-                                <label for="region">Region</label>
-                                <select id="region" name="region">
+                                <label class="form-label" for="region">Region</label>
+                                <select id="region" name="region" class="form-select">
                                     <option value="">Select Region</option>
                                     <option value="Auckland" <?= ($_POST['region'] ?? '') === 'Auckland' ? 'selected' : '' ?>>Auckland</option>
                                     <option value="Wellington" <?= ($_POST['region'] ?? '') === 'Wellington' ? 'selected' : '' ?>>Wellington</option>
@@ -151,24 +314,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="password">Password *</label>
-                                <input type="password" id="password" name="password" required minlength="6">
+                                <label class="form-label" for="password">Password <span class="required">*</span></label>
+                                <input type="password" id="password" name="password" class="form-input" required minlength="6">
                                 <small class="form-help">Minimum 6 characters</small>
                             </div>
                             
                             <div class="form-group">
-                                <label for="confirm_password">Confirm Password *</label>
-                                <input type="password" id="confirm_password" name="confirm_password" required minlength="6">
+                                <label class="form-label" for="confirm_password">Confirm Password <span class="required">*</span></label>
+                                <input type="password" id="confirm_password" name="confirm_password" class="form-input" required minlength="6">
                             </div>
                         </div>
 
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-plus"></i> Create Student
-                            </button>
-                            <a href="admin-students.php" class="btn btn-secondary">
-                                <i class="fas fa-arrow-left"></i> Back to Students
-                            </a>
+                        <div class="form-buttons">
+                            <button type="submit" class="btn-submit">Create Student</button>
+                            <a href="admin-students.php" class="btn-cancel">Cancel</a>
                         </div>
                     </form>
                 </div>

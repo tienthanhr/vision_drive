@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-// Kiểm tra đăng nhập admin
+// Check admin authentication
 if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
     header('Location: admin-login.php');
     exit();
@@ -9,8 +9,20 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 
 require_once 'config/database.php';
 
+// CSRF token setup
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+// Helper function for CSRF input
+if (!function_exists('csrf_input')) {
+    function csrf_input() {
+        $token = $_SESSION['csrf_token'] ?? '';
+        echo '<input type="hidden" name="csrf_token" value="' . htmlspecialchars($token, ENT_QUOTES, 'UTF-8') . '">';
+    }
+}
+
 $message = '';
-$csrf_token = bin2hex(random_bytes(32)); // Generate CSRF token
 $messageType = '';
 
 // Handle success/error messages
@@ -23,7 +35,6 @@ if (isset($_GET['success'])) {
 }
 
 try {
-    $_SESSION['csrf_token'] = $csrf_token; // Store CSRF token in session
     $db = new VisionDriveDatabase();
     $students = $db->getStudentsWithDocuments();
 } catch (Exception $e) {
@@ -95,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Xử lý search
+// Handle search
 $searchTerm = $_GET['search'] ?? '';
 if ($searchTerm) {
     $students = array_filter($students, function($student) use ($searchTerm) {
@@ -139,8 +150,11 @@ if (isset($allowedSorts[$sort])) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vision Drive - Student Management</title>
-    <?php include 'includes/admin-head.php'; ?>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
     <style>
         /* Page Specific Styles */
         .page-header {
@@ -158,14 +172,9 @@ if (isset($allowedSorts[$sort])) {
             letter-spacing: 0.5px;
         }
 
-        .breadcrumb {
+        .page-subtitle {
             color: var(--text-light);
             font-size: 16px;
-        }
-
-        .breadcrumb a {
-            color: var(--primary-blue);
-            text-decoration: none;
         }
 
         .content-section {
@@ -347,6 +356,8 @@ if (isset($allowedSorts[$sort])) {
 
             .students-table {
                 font-size: 12px;
+                display: block;
+                overflow-x: auto;
             }
 
             .students-table th,
@@ -356,6 +367,7 @@ if (isset($allowedSorts[$sort])) {
 
             .action-buttons {
                 flex-direction: column;
+                gap: 5px;
             }
         }
     </style>
@@ -370,9 +382,7 @@ if (isset($allowedSorts[$sort])) {
             <!-- Page Header -->
             <div class="page-header">
                 <h1 class="page-title">Student Management</h1>
-                <div class="breadcrumb">
-                    <a href="admin-dashboard.php">Admin</a> > Students
-                </div>
+                <p class="page-subtitle">Manage students, documents, and training records</p>
             </div>
 
             <!-- Content Section -->

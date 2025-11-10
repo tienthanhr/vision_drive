@@ -102,15 +102,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add New Schedule - Vision Drive Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <style>
+        * {
+            font-family: 'Montserrat', sans-serif;
+        }
+        
         /* Unified form styles (match course edit) */
         .form-container { background:white; border-radius:10px; padding:40px; box-shadow:0 2px 10px rgba(0,0,0,0.1); max-width:800px; margin:0 auto; }
         .form-title { font-size:28px; font-weight:700; color:var(--text-dark); margin-bottom:20px; text-align:center; }
         .form-group label.form-label { font-weight:600; color:var(--text-dark); margin-bottom:8px; display:block; }
-        .form-input, .form-select, .form-textarea { width:100%; padding:12px 15px; border:2px solid #e0e0e0; border-radius:8px; background:#fafafa; }
+        .form-input, .form-select, .form-textarea { width:100%; padding:12px 15px; border:2px solid #e0e0e0; border-radius:8px; background:#fafafa; font-family:'Montserrat',sans-serif; }
         .form-input:focus, .form-select:focus, .form-textarea:focus { outline:none; border-color: var(--primary-blue); background:white; }
         .form-row { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
         .form-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; }

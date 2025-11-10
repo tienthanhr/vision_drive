@@ -5,45 +5,45 @@ try {
     $db = new VisionDriveDatabase();
     $pdo = $db->getConnection();
     
-    echo "=== HƯỚNG DẪN GÁN HỌC SINH VÀO KHÓA HỌC ===\n\n";
+    echo "=== STUDENT-COURSE ASSIGNMENT GUIDE ===\n\n";
     
-    // 1. Kiểm tra cấu trúc bảng users (students)
-    echo "1. CẤU TRÚC BẢNG USERS (Students):\n";
+    // 1. Check users table structure (students)
+    echo "1. USERS TABLE STRUCTURE (Students):\n";
     echo "==================================\n";
     $result = $pdo->query('DESCRIBE users');
     while($row = $result->fetch()) {
         echo "- " . $row['Field'] . " (" . $row['Type'] . ")\n";
     }
     
-    // 2. Kiểm tra cấu trúc bảng courses
-    echo "\n2. CẤU TRÚC BẢNG COURSES:\n";
+    // 2. Check courses table structure
+    echo "\n2. COURSES TABLE STRUCTURE:\n";
     echo "=========================\n";
     $result = $pdo->query('DESCRIBE courses');
     while($row = $result->fetch()) {
         echo "- " . $row['Field'] . " (" . $row['Type'] . ")\n";
     }
     
-    // 3. Kiểm tra cấu trúc bảng training_sessions
-    echo "\n3. CẤU TRÚC BẢNG TRAINING_SESSIONS:\n";
+    // 3. Check training_sessions table structure
+    echo "\n3. TRAINING_SESSIONS TABLE STRUCTURE:\n";
     echo "===================================\n";
     $result = $pdo->query('DESCRIBE training_sessions');
     while($row = $result->fetch()) {
         echo "- " . $row['Field'] . " (" . $row['Type'] . ")\n";
     }
     
-    // 4. Kiểm tra cấu trúc bảng bookings
-    echo "\n4. CẤU TRÚC BẢNG BOOKINGS:\n";
+    // 4. Check bookings table structure
+    echo "\n4. BOOKINGS TABLE STRUCTURE:\n";
     echo "==========================\n";
     $result = $pdo->query('DESCRIBE bookings');
     while($row = $result->fetch()) {
         echo "- " . $row['Field'] . " (" . $row['Type'] . ")\n";
     }
     
-    // 5. Hiển thị dữ liệu mẫu
-    echo "\n5. DỮ LIỆU MẪU:\n";
+    // 5. Display sample data
+    echo "\n5. SAMPLE DATA:\n";
     echo "================\n";
     
-    echo "\nStudents (users với role = 'trainee'):\n";
+    echo "\nStudents (users with role = 'trainee'):\n";
     $result = $pdo->query("SELECT user_id, first_name, last_name, email FROM users WHERE role = 'trainee' LIMIT 3");
     while($row = $result->fetch()) {
         echo "- ID: {$row['user_id']}, Name: {$row['first_name']} {$row['last_name']}, Email: {$row['email']}\n";
@@ -61,7 +61,7 @@ try {
         echo "- Session ID: {$row['session_id']}, Course: {$row['course_name']}, Date: {$row['session_date']} {$row['start_time']}\n";
     }
     
-    echo "\nBookings (học sinh đã gán vào khóa):\n";
+    echo "\nBookings (students assigned to courses):\n";
     $result = $pdo->query("SELECT b.booking_id, u.first_name, u.last_name, c.course_name, b.status FROM bookings b JOIN users u ON b.user_id = u.user_id JOIN training_sessions ts ON b.session_id = ts.session_id JOIN courses c ON ts.course_id = c.course_id LIMIT 3");
     while($row = $result->fetch()) {
         echo "- Booking ID: {$row['booking_id']}, Student: {$row['first_name']} {$row['last_name']}, Course: {$row['course_name']}, Status: {$row['status']}\n";

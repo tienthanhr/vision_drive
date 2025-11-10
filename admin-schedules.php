@@ -1,13 +1,26 @@
 <?php
 session_start();
 
-// Kiểm tra đăng nhập admin
+// Check admin authentication
 if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
     header('Location: admin-login.php');
     exit();
 }
 
 require_once 'config/database.php';
+
+// CSRF token setup
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+// Helper function for CSRF input
+if (!function_exists('csrf_input')) {
+    function csrf_input() {
+        $token = $_SESSION['csrf_token'] ?? '';
+        echo '<input type="hidden" name="csrf_token" value="' . htmlspecialchars($token, ENT_QUOTES, 'UTF-8') . '">';
+    }
+}
 
 try {
     $db = new VisionDriveDatabase();
@@ -86,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_action'])) {
     }
 }
 
-// Xử lý search
+// Handle search
 $searchTerm = $_GET['search'] ?? '';
 if ($searchTerm) {
     $schedules = array_filter($schedules, function($schedule) use ($searchTerm) {
@@ -127,8 +140,11 @@ if (isset($allowedSorts[$sort])) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <?php include 'includes/admin-head.php'; ?>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vision Drive - Schedule Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
     <style>
         /* Page Specific Styles */
         .page-header {
@@ -146,14 +162,9 @@ if (isset($allowedSorts[$sort])) {
             letter-spacing: 0.5px;
         }
 
-        .breadcrumb {
+        .page-subtitle {
             color: var(--text-light);
             font-size: 16px;
-        }
-
-        .breadcrumb a {
-            color: var(--primary-blue);
-            text-decoration: none;
         }
 
         .content-section {
@@ -325,6 +336,8 @@ if (isset($allowedSorts[$sort])) {
 
             .schedules-table {
                 font-size: 12px;
+                display: block;
+                overflow-x: auto;
             }
 
             .schedules-table th,
@@ -334,6 +347,7 @@ if (isset($allowedSorts[$sort])) {
 
             .action-buttons {
                 flex-direction: column;
+                gap: 5px;
             }
         }
     </style>
@@ -342,19 +356,13 @@ if (isset($allowedSorts[$sort])) {
     <!-- Dashboard Container -->
     <div class="dashboard-container">
         <?php include 'includes/admin-sidebar-all.php'; ?>
-                    </a>
-                </li>
-            </ul>
-        </aside>
 
         <!-- Main Content -->
         <main class="main-content">
             <!-- Page Header -->
             <div class="page-header">
                 <h1 class="page-title">Schedule Management</h1>
-                <div class="breadcrumb">
-                    <a href="admin-dashboard.php">Admin</a> > Schedules
-                </div>
+                <p class="page-subtitle">Manage training sessions and schedules</p>
             </div>
 
             <!-- Content Section -->

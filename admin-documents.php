@@ -1,13 +1,13 @@
 <?php
 session_start();
 
-// Kiểm tra đăng nhập admin
+// Check admin authentication
 if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
     header('Location: admin-login.php');
     exit();
 }
 
-// Lấy danh sách documents từ thư mục uploads/documents
+// Get list of documents from uploads/documents folder
 $documentsPath = 'uploads/documents/';
 $documents = [];
 
@@ -65,7 +65,7 @@ if (is_dir($documentsPath)) {
     }
 }
 
-// Fallback data nếu không có files
+// Fallback data if no files
 if (empty($documents)) {
     $documents = [
         [
@@ -101,7 +101,7 @@ if (empty($documents)) {
     ];
 }
 
-// Xử lý search
+// Handle search
 $searchTerm = $_GET['search'] ?? '';
 if ($searchTerm) {
     $documents = array_filter($documents, function($document) use ($searchTerm) {

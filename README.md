@@ -1,141 +1,142 @@
 # Vision Drive - Training Booking System
 
-## Mô tả dự án
-Vision Drive là hệ thống đặt chỗ khóa học đào tạo lái xe được thiết kế theo hình ảnh mockup của bạn. Hệ thống bao gồm:
+## Project Description
+Vision Drive is a driving school training booking system designed according to your mockup. The system includes:
 
-- **User Interface**: Giao diện cho học viên đặt khóa học
-- **Admin Interface**: Giao diện quản trị cho admin
-- **Database System**: Hệ thống cơ sở dữ liệu LocalStorage
+- **User Interface**: Interface for students to book courses
+- **Admin Interface**: Administrative interface for admins
+- **Database System**: MySQL database system
 
-## Cấu trúc dự án
+## Project Structure
 
 ```
 VISION DRIVE/
-├── index.html              # Trang chủ (User Interface)
-├── booking.html            # Trang đặt khóa học  
-├── admin-login.html        # Trang đăng nhập admin
-├── admin-dashboard.html    # Dashboard admin
+├── index.php               # Homepage (User Interface)
+├── booking.php             # Course booking page
+├── admin-login.php         # Admin login page
+├── admin-dashboard.php     # Admin dashboard
 ├── css/
-│   └── styles.css          # File CSS chung
+│   └── styles.css          # Common CSS file
 ├── js/
-│   └── database.js         # Hệ thống database
-└── VisionDrive_Complete_Database.xlsx  # Database Excel gốc
+│   └── database.js         # Database system
+└── config/
+    └── database.php        # Database connection
 ```
 
-## Tính năng chính
+## Main Features
 
-### User Interface (Giao diện học viên)
-1. **Trang chủ** (`index.html`)
-   - Hiển thị các khóa học có sẵn
-   - Thông tin chi tiết từng khóa học
-   - Nút đặt khóa học
+### User Interface (Student interface)
+1. **Homepage** (`index.php`)
+   - Display available courses
+   - Detailed information for each course
+   - Book course button
 
-2. **Trang đặt khóa học** (`booking.html`)
-   - Form đăng ký 3 bước:
-     - Bước 1: Chọn khóa học và campus
-     - Bước 2: Nhập thông tin cá nhân
-     - Bước 3: Xác nhận đặt chỗ thành công
-   - Upload file giấy tờ tùy thân
-   - Tạo mã xác nhận tự động
+2. **Course booking page** (`booking.php`)
+   - 3-step registration form:
+     - Step 1: Select course and campus
+     - Step 2: Enter personal information
+     - Step 3: Booking confirmation
+   - Upload identity documents
+   - Automatic confirmation code generation
 
-### Admin Interface (Giao diện quản trị)
-1. **Trang đăng nhập** (`admin-login.html`)
-   - Form đăng nhập admin
+### Admin Interface (Administrative interface)
+1. **Login page** (`admin-login.php`)
+   - Admin login form
 
-2. **Dashboard** (`admin-dashboard.html`)
-   - Thống kê tổng quan
-   - Quản lý danh sách khóa học đào tạo
-   - Quản lý các buổi đào tạo
-   - Tìm kiếm và lọc dữ liệu
-   - Thêm/sửa/xóa khóa học
+2. **Dashboard** (`admin-dashboard.php`)
+   - Overview statistics
+   - Manage training courses
+   - Manage training sessions
+   - Search and filter data
+   - Add/edit/delete courses
 
-## Cách sử dụng
+## How to Use
 
-### Khởi chạy hệ thống
-1. Mở file `index.html` trong trình duyệt web
-2. Hệ thống sẽ tự động load dữ liệu mẫu
+### Launch the system
+1. Open file `index.php` in web browser
+2. System will automatically load sample data
 
-### Đặt khóa học (User)
-1. Vào trang chủ (`index.html`)
-2. Chọn khóa học muốn đăng ký
-3. Điền thông tin theo 3 bước
-4. Nhận mã xác nhận
+### Book a course (User)
+1. Go to homepage (`index.php`)
+2. Select desired course
+3. Fill in information in 3 steps
+4. Receive confirmation code
 
-### Quản trị hệ thống (Admin)
-1. Vào `/admin-login.html`
-2. Đăng nhập với:
+### System administration (Admin)
+1. Go to `/admin-login.php`
+2. Login with:
    - Username: `admin`
    - Password: `password123`
-3. Quản lý dữ liệu từ dashboard
+3. Manage data from dashboard
 
-## Thông tin đăng nhập Admin
+## Admin Login Information
 
-| Username | Password | Quyền |
+| Username | Password | Role |
 |----------|----------|-------|
 | admin    | password123 | Administrator |
 | staff    | staff123    | Staff |
 
-## Dữ liệu mẫu
+## Sample Data
 
-### Khóa học có sẵn:
-1. **Forklift Operator** - 8 giờ - $350
-2. **Forklift Refresher** - 4 giờ - $180  
-3. **Class 2 Truck** - 16 giờ - $750
+### Available courses:
+1. **Forklift Operator** - 8 hours - $350
+2. **Forklift Refresher** - 4 hours - $180  
+3. **Class 2 Truck** - 16 hours - $750
 
-### Campus có sẵn:
+### Available campuses:
 1. Auckland
 2. Hamilton  
 3. Christchurch
 
-## Tính năng Database
+## Database Features
 
-### Lưu trữ dữ liệu
-- Sử dụng LocalStorage để lưu trữ dữ liệu
-- Tự động save khi có thay đổi
-- Khôi phục dữ liệu khi reload trang
+### Data storage
+- Uses MySQL to store data
+- Automatic save when changes occur
+- Data restoration when page reloads
 
-### Quản lý dữ liệu
-- CRUD operations cho tất cả entities
-- Tìm kiếm và lọc
-- Thống kê realtime
-- Export/Import dữ liệu
+### Data management
+- CRUD operations for all entities
+- Search and filter
+- Realtime statistics
+- Export/Import data
 
 ## API Functions (JavaScript)
 
 ### Database Operations
 ```javascript
-// Lấy danh sách khóa học
+// Get courses list
 window.visionDB.getCourses()
 
-// Thêm khóa học mới
+// Add new course
 window.visionDB.addCourse(courseData)
 
-// Tạo booking mới
+// Create new booking
 window.visionDB.createBooking(bookingData)
 
-// Lấy thống kê
+// Get statistics
 window.visionDB.getStatistics()
 ```
 
 ### Utility Functions
 ```javascript
-// Format tiền tệ
+// Format currency
 VisionDriveUtils.formatCurrency(350) // "$350.00"
 
-// Format ngày
+// Format date
 VisionDriveUtils.formatDate("2024-11-01") // "1 Nov 2024"
 
 // Validate email
 VisionDriveUtils.validateEmail("test@email.com") // true/false
 
-// Hiển thị thông báo
+// Show notification
 VisionDriveUtils.showNotification("Success!", "success")
 ```
 
 ## Responsive Design
-- Hỗ trợ desktop, tablet, mobile
+- Supports desktop, tablet, mobile
 - Breakpoints: 1200px, 768px, 480px
-- Touch-friendly buttons và forms
+- Touch-friendly buttons and forms
 
 ## Browser Support
 - Chrome (latest)
@@ -145,8 +146,8 @@ VisionDriveUtils.showNotification("Success!", "success")
 
 ## Customization
 
-### Thay đổi màu sắc
-Chỉnh sửa CSS variables trong `/css/styles.css`:
+### Change colors
+Edit CSS variables in `/css/styles.css`:
 ```css
 :root {
     --primary-blue: #00bcd4;
@@ -156,35 +157,35 @@ Chỉnh sửa CSS variables trong `/css/styles.css`:
 }
 ```
 
-### Thêm khóa học mới
+### Add new course
 ```javascript
 window.visionDB.addCourse({
-    name: "Tên khóa học",
-    description: "Mô tả",
-    duration: "X giờ",
+    name: "Course name",
+    description: "Description",
+    duration: "X hours",
     price: 999,
     maxCapacity: 10,
     image: "🚗"
 });
 ```
 
-## Kết nối Database thực
-Để kết nối với database thực (MySQL, PostgreSQL, etc.):
-1. Thay thế LocalStorage bằng API calls
-2. Cập nhật `/js/database.js`
-3. Thêm authentication server-side
-4. Implement file upload cho documents
+## Connect to real Database
+To connect with real database (MySQL, PostgreSQL, etc.):
+1. Replace LocalStorage with API calls
+2. Update `/js/database.js`
+3. Add server-side authentication
+4. Implement file upload for documents
 
 ## Troubleshooting
 
-### Vấn đề thường gặp:
-1. **Dữ liệu bị mất**: Kiểm tra LocalStorage browser
-2. **Admin không đăng nhập được**: Xóa sessionStorage và thử lại
-3. **Form không submit**: Kiểm tra validation JavaScript
+### Common issues:
+1. **Data lost**: Check browser LocalStorage
+2. **Admin login fails**: Clear sessionStorage and retry
+3. **Form not submitting**: Check JavaScript validation
 
-### Reset dữ liệu:
+### Reset data:
 ```javascript
-// Xóa tất cả dữ liệu
+// Delete all data
 localStorage.removeItem('visionDriveDB');
 window.location.reload();
 ```

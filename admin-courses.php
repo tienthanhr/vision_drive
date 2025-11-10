@@ -1,13 +1,26 @@
 <?php
 session_start();
 
-// Kiểm tra đăng nhập admin
+// Check admin authentication
 if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
     header('Location: admin-login.php');
     exit();
 }
 
 require_once 'config/database.php';
+
+// CSRF token setup
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+// Helper function for CSRF input
+if (!function_exists('csrf_input')) {
+    function csrf_input() {
+        $token = $_SESSION['csrf_token'] ?? '';
+        echo '<input type="hidden" name="csrf_token" value="' . htmlspecialchars($token, ENT_QUOTES, 'UTF-8') . '">';
+    }
+}
 
 try {
     $db = new VisionDriveDatabase();
@@ -56,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_action'])) {
     }
 }
 
-// Xử lý search
+// Handle search
 $searchTerm = $_GET['search'] ?? '';
 if ($searchTerm) {
     $courses = array_filter($courses, function($course) use ($searchTerm) {
@@ -130,10 +143,11 @@ if (isset($_GET['error'])) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vision Drive - Course Management</title>
-    <?php include 'includes/admin-head.php'; ?>
-    <!-- Bootstrap 5 -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
     <style>
         /* Page Specific Styles */
         .page-header {
@@ -151,14 +165,9 @@ if (isset($_GET['error'])) {
             letter-spacing: 0.5px;
         }
 
-        .breadcrumb {
+        .page-subtitle {
             color: var(--text-light);
             font-size: 16px;
-        }
-
-        .breadcrumb a {
-            color: var(--primary-blue);
-            text-decoration: none;
         }
 
         .content-section {
@@ -316,6 +325,8 @@ if (isset($_GET['error'])) {
 
             .courses-table {
                 font-size: 14px;
+                display: block;
+                overflow-x: auto;
             }
 
             .courses-table th,
@@ -325,6 +336,7 @@ if (isset($_GET['error'])) {
 
             .action-buttons {
                 flex-direction: column;
+                gap: 5px;
             }
         }
     </style>
@@ -333,19 +345,13 @@ if (isset($_GET['error'])) {
     <!-- Dashboard Container -->
     <div class="dashboard-container">
         <?php include 'includes/admin-sidebar-all.php'; ?>
-                    </a>
-                </li>
-            </ul>
-        </aside>
 
         <!-- Main Content -->
         <main class="main-content">
             <!-- Page Header -->
             <div class="page-header">
                 <h1 class="page-title">Course Management</h1>
-                <div class="breadcrumb">
-                    <a href="admin-dashboard.php">Admin</a> > Courses
-                </div>
+                <p class="page-subtitle">Manage all training courses and programs</p>
             </div>
 
             <!-- Content Section -->
@@ -385,23 +391,25 @@ if (isset($_GET['error'])) {
                 <form method="POST" onsubmit="return confirmBulkDelete();">
                     <?php csrf_input(); ?>
                     <input type="hidden" name="bulk_action" value="delete">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <div>
-                            <select name="bulk_action" class="form-select form-select-sm d-inline-block w-auto me-2">
-                                <option value="delete">Delete</option>
-                                <option value="restore">Restore</option>
-                            </select>
-                            <button type="submit" class="btn btn-sm btn-danger">Apply</button>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <select name="bulk_action" class="form-select form-select-sm d-inline-block w-auto">
+                                    <option value="delete">Delete</option>
+                                    <option value="restore">Restore</option>
+                                </select>
+                            </div>
+                            <div>
+                                <?php $status = $_GET['status'] ?? 'active'; ?>
+                                <label for="statusFilter" class="form-label mb-1">Status</label>
+                                <select id="statusFilter" class="form-select form-select-sm" onchange="onChangeStatusFilter(this.value)">
+                                    <option value="active" <?= $status==='active'?'selected':'' ?>>Active</option>
+                                    <option value="inactive" <?= $status==='inactive'?'selected':'' ?>>Inactive</option>
+                                    <option value="all" <?= $status==='all'?'selected':'' ?>>All</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <?php $status = $_GET['status'] ?? 'active'; ?>
-                            <label for="statusFilter" class="mb-0">Status</label>
-                            <select id="statusFilter" class="form-select form-select-sm w-auto" onchange="onChangeStatusFilter(this.value)">
-                                <option value="active" <?= $status==='active'?'selected':'' ?>>Active</option>
-                                <option value="inactive" <?= $status==='inactive'?'selected':'' ?>>Inactive</option>
-                                <option value="all" <?= $status==='all'?'selected':'' ?>>All</option>
-                            </select>
-                        </div>
+                        <button type="submit" class="btn btn-sm btn-danger mt-2">Apply</button>
                     </div>
                     <div class="table-responsive">
                 <table class="courses-table table table-hover align-middle">

@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-// Kiểm tra đăng nhập admin
+// Check admin authentication
 if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
     header('Location: admin-login.php');
     exit();
@@ -13,7 +13,7 @@ $success_message = '';
 $error_message = '';
 $course = null;
 
-// Lấy course ID
+// Get course ID
 $courseId = intval($_GET['id'] ?? 0);
 if (!$courseId) {
     header('Location: admin-courses.php');
@@ -31,7 +31,7 @@ try {
     $error_message = 'Database error: ' . $e->getMessage();
 }
 
-// Xử lý form submission
+// Handle form submission
 if ($_POST && $course) {
     $name = trim($_POST['name'] ?? '');
     $description = trim($_POST['description'] ?? '');

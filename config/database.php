@@ -597,7 +597,7 @@ class VisionDriveDatabase {
             $params = [];
             $where_conditions = [];
             
-            // Base query
+            // Base query - FIXED: Use correct column names from training_sessions table
             $sql = "SELECT 
                         ts.session_id,
                         ts.course_id,
@@ -606,26 +606,21 @@ class VisionDriveDatabase {
                         ca.campus_name,
                         CONCAT(ca.city, ', ', ca.region) as campus_location,
                         ts.session_date,
-                        ts.session_time, 
+                        ts.start_time,
+                        ts.end_time,
                         CONCAT(c.duration_hours, ' hours') as duration,
-                        ts.instructor,
-                        ts.max_capacity,
-                        COALESCE(enrolled.count, 0) as enrolled_count,
-                        (ts.max_capacity - COALESCE(enrolled.count, 0)) as available_spots,
-                        CONCAT('$', c.price) as price,
+                        ts.instructor_name,
+                        ts.max_participants,
+                        ts.current_participants as enrolled_count,
+                        (ts.max_participants - ts.current_participants) as available_spots,
+                        c.price,
                         ts.status
                     FROM training_sessions ts
                     JOIN courses c ON ts.course_id = c.course_id
-                    JOIN campuses ca ON ts.campus_id = ca.campus_id
-                    LEFT JOIN (
-                        SELECT session_id, COUNT(*) as count 
-                        FROM enrollments 
-                        WHERE status IN ('enrolled', 'confirmed')
-                        GROUP BY session_id
-                    ) enrolled ON ts.session_id = enrolled.session_id";
+                    JOIN campuses ca ON ts.campus_id = ca.campus_id";
             
-            // Add where conditions
-            $where_conditions[] = "ts.status = 'scheduled'";
+            // Add where conditions - allow both scheduled and empty status
+            $where_conditions[] = "(ts.status = 'scheduled' OR ts.status = '' OR ts.status IS NULL)";
             $where_conditions[] = "ts.session_date >= CURDATE()";
             
             if ($courseId > 0) {
@@ -652,7 +647,7 @@ class VisionDriveDatabase {
                 $sql .= " WHERE " . implode(" AND ", $where_conditions);
             }
             
-            $sql .= " HAVING available_spots > 0 ORDER BY ts.session_date, ts.session_time";
+            $sql .= " HAVING available_spots > 0 ORDER BY ts.session_date, ts.start_time";
             
             $stmt = $this->db->prepare($sql);
             $stmt->execute($params);
@@ -668,25 +663,26 @@ class VisionDriveDatabase {
         try {
             $this->db->beginTransaction();
             
-            // Check if schedule is still available
+            // Check if schedule exists and has spots available
             $stmt = $this->db->prepare("SELECT 
-                ts.max_capacity,
-                COALESCE(enrolled.count, 0) as enrolled_count,
-                (ts.max_capacity - COALESCE(enrolled.count, 0)) as available_spots
+                ts.max_participants,
+                ts.current_participants,
+                (ts.max_participants - ts.current_participants) as available_spots
                 FROM training_sessions ts
-                LEFT JOIN (
-                    SELECT session_id, COUNT(*) as count 
-                    FROM enrollments 
-                    WHERE status IN ('enrolled', 'confirmed')
-                    GROUP BY session_id
-                ) enrolled ON ts.session_id = enrolled.session_id
-                WHERE ts.session_id = ? AND ts.status = 'scheduled'");
+                WHERE ts.session_id = ?");
             $stmt->execute([$bookingData['schedule_id']]);
             $scheduleInfo = $stmt->fetch();
             
-            if (!$scheduleInfo || $scheduleInfo['available_spots'] <= 0) {
+            if (!$scheduleInfo) {
                 $this->db->rollBack();
-                return false;
+                error_log("Schedule not found: " . $bookingData['schedule_id']);
+                return ['error' => 'Schedule not found'];
+            }
+            
+            if ($scheduleInfo['available_spots'] <= 0) {
+                $this->db->rollBack();
+                error_log("No available spots for schedule: " . $bookingData['schedule_id']);
+                return ['error' => 'No available spots'];
             }
             
             // Check if user exists
@@ -696,44 +692,88 @@ class VisionDriveDatabase {
             
             if ($user) {
                 $userId = $user['user_id'];
+                error_log("Using existing user ID: " . $userId);
             } else {
                 // Create new user
+                $nameParts = explode(' ', $bookingData['student_name'], 2);
+                $firstName = $nameParts[0];
+                $lastName = $nameParts[1] ?? '';
+                
+                error_log("Creating new user: " . $firstName . " " . $lastName);
+                
+                // Generate temp password for new user
+                $tempPassword = password_hash('VisionDrive2025', PASSWORD_DEFAULT);
+                
                 $stmt = $this->db->prepare("
-                    INSERT INTO users (first_name, last_name, email, phone, role, status, created_at) 
-                    VALUES (?, '', ?, ?, 'trainee', 'active', NOW())
+                    INSERT INTO users (first_name, last_name, email, phone, password_hash, role, region, status) 
+                    VALUES (?, ?, ?, ?, ?, 'trainee', 'New Zealand', 'active')
                 ");
-                $stmt->execute([
-                    $bookingData['student_name'],
+                $result = $stmt->execute([
+                    $firstName,
+                    $lastName,
                     $bookingData['email'],
-                    $bookingData['phone']
+                    $bookingData['phone'],
+                    $tempPassword
                 ]);
+                
+                if (!$result) {
+                    $this->db->rollBack();
+                    error_log("Failed to create user: " . print_r($stmt->errorInfo(), true));
+                    return ['error' => 'Failed to create user'];
+                }
+                
                 $userId = $this->db->lastInsertId();
+                error_log("Created new user ID: " . $userId);
             }
             
-            // Create enrollment record
+            // Create booking record
+            $confirmationCode = 'VD' . strtoupper(substr(uniqid(), -6));
+            error_log("Creating booking with confirmation code: " . $confirmationCode);
+            
             $stmt = $this->db->prepare("
-                INSERT INTO enrollments (user_id, session_id, enrollment_date, status, special_requirements, created_at)
-                VALUES (?, ?, NOW(), 'enrolled', ?, NOW())
+                INSERT INTO bookings (user_id, session_id, status, payment_status, confirmation_code, notes)
+                VALUES (?, ?, 'confirmed', 'unpaid', ?, ?)
             ");
-            $stmt->execute([
+            $result = $stmt->execute([
                 $userId, 
                 $bookingData['schedule_id'],
+                $confirmationCode,
                 $bookingData['special_requirements'] ?? ''
             ]);
-            $enrollmentId = $this->db->lastInsertId();
+            
+            if (!$result) {
+                $this->db->rollBack();
+                error_log("Failed to create booking: " . print_r($stmt->errorInfo(), true));
+                return ['error' => 'Failed to create booking', 'details' => $stmt->errorInfo()];
+            }
+            
+            $bookingId = $this->db->lastInsertId();
+            error_log("Created booking ID: " . $bookingId);
+            
+            // Update current_participants count
+            $stmt = $this->db->prepare("
+                UPDATE training_sessions 
+                SET current_participants = current_participants + 1 
+                WHERE session_id = ?
+            ");
+            $stmt->execute([$bookingData['schedule_id']]);
+            error_log("Updated participant count for session: " . $bookingData['schedule_id']);
             
             $this->db->commit();
+            error_log("Booking transaction committed successfully");
             
             return [
-                'booking_id' => $enrollmentId,
+                'booking_id' => $bookingId,
                 'user_id' => $userId,
+                'confirmation_code' => $confirmationCode,
                 'success' => true
             ];
             
         } catch (Exception $e) {
             $this->db->rollBack();
             error_log("Database error in createBookingWithSchedule: " . $e->getMessage());
-            return false;
+            error_log("Stack trace: " . $e->getTraceAsString());
+            return ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()];
         }
     }
 }

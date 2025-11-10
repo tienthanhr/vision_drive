@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-// Kiểm tra đăng nhập admin
+// Check admin authentication
 if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
     header('Location: admin-login.php');
     exit();
@@ -12,7 +12,7 @@ require_once 'config/database.php';
 try {
     $db = new VisionDriveDatabase();
     
-    // Lấy dữ liệu thống kê thực tế
+    // Get actual statistics
     $stats = $db->getStats();
     $totalSessions = $stats['active_sessions'];
     $totalStudents = $stats['users'];
@@ -27,7 +27,7 @@ try {
     $totalCampuses = count($campuses);
     
 } catch (Exception $e) {
-    // Fallback data nếu có lỗi database
+    // Fallback data if database error
     $totalSessions = 0;
     $totalStudents = 0;
     $totalCourses = 0;
@@ -62,7 +62,7 @@ try {
     ];
 }
 
-// Xử lý search
+// Handle search
 $searchTerm = $_GET['search'] ?? '';
 if ($searchTerm) {
     $trainingSessions = array_filter($trainingSessions, function($session) use ($searchTerm) {
@@ -81,20 +81,22 @@ if ($searchTerm) {
     <link rel="stylesheet" href="css/styles.css">
     <style>
         /* Dashboard Specific Styles */
-        .dashboard-header {
+        .page-header {
             background: white;
-            padding: 20px 0;
+            padding: 30px 0;
             margin-bottom: 30px;
+            border-bottom: 1px solid #e0e0e0;
         }
 
-        .welcome-section h1 {
+        .page-title {
             font-size: 32px;
             font-weight: 700;
             color: var(--text-dark);
             margin-bottom: 8px;
+            letter-spacing: 0.5px;
         }
 
-        .welcome-section p {
+        .page-subtitle {
             color: var(--text-light);
             font-size: 16px;
         }
@@ -136,7 +138,7 @@ if ($searchTerm) {
         }
 
         /* Training Sessions Section */
-        .sessions-section {
+        .content-section {
             background: white;
             border-radius: 10px;
             padding: 30px;
@@ -315,6 +317,8 @@ if ($searchTerm) {
 
             .sessions-table {
                 font-size: 14px;
+                display: block;
+                overflow-x: auto;
             }
 
             .sessions-table th,
@@ -324,6 +328,19 @@ if ($searchTerm) {
 
             .action-buttons {
                 flex-direction: column;
+                gap: 5px;
+            }
+
+            .page-title {
+                font-size: 24px;
+            }
+
+            .stat-card {
+                padding: 20px;
+            }
+
+            .stat-number {
+                font-size: 36px;
             }
         }
     </style>
@@ -335,12 +352,10 @@ if ($searchTerm) {
 
         <!-- Main Content -->
         <main class="main-content">
-            <!-- Welcome Section -->
-            <div class="dashboard-header">
-                <div class="welcome-section">
-                    <h1>Welcome, Admin</h1>
-                    <p>Here's what's happening with your training center today</p>
-                </div>
+            <!-- Page Header -->
+            <div class="page-header">
+                <h1 class="page-title">Dashboard</h1>
+                <p class="page-subtitle">Here's what's happening with your training center today</p>
             </div>
 
             <!-- Stats Grid -->
@@ -364,7 +379,7 @@ if ($searchTerm) {
             </div>
 
             <!-- Training Sessions Section -->
-            <div class="sessions-section">
+            <div class="content-section">
                 <div class="section-header">
                     <h2 class="section-title">Upcoming Training Sessions</h2>
                     <div class="search-container">

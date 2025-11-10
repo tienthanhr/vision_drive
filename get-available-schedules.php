@@ -5,16 +5,16 @@ require_once 'config/database.php';
 try {
     $db = new VisionDriveDatabase();
     
-    // Lấy filter parameters
+    // Get filter parameters
     $courseId = isset($_GET['course_id']) ? (int)$_GET['course_id'] : 0;
     $campusId = isset($_GET['campus_id']) ? (int)$_GET['campus_id'] : 0;
     $startDate = isset($_GET['start_date']) ? $_GET['start_date'] : date('Y-m-d');
     $endDate = isset($_GET['end_date']) ? $_GET['end_date'] : date('Y-m-d', strtotime('+3 months'));
     
-    // Get schedules từ database
+    // Get schedules from database
     $schedules = $db->getAvailableSchedules($courseId, $campusId, $startDate, $endDate);
     
-    // Fallback data nếu database error
+    // Fallback data if database error
     if (empty($schedules)) {
         $schedules = [
             [

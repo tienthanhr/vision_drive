@@ -2,7 +2,7 @@
 session_start();
 require_once 'config/database.php';
 
-// Xử lý đăng nhập
+// Handle login
 if ($_POST) {
     $username = $_POST['username'] ?? '';
     $password = $_POST['password'] ?? '';

@@ -1,25 +1,25 @@
 <?php
-// Xử lý booking đơn giản
+// Simple booking handler
 require_once 'config/database.php';
 
-// Start session chỉ một lần
+// Start session only once
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
-// Khởi tạo variables
+// Initialize variables
 $step = isset($_GET['step']) ? (int)$_GET['step'] : 1;
 $selectedCourse = isset($_GET['course']) ? (int)$_GET['course'] : 0;
 $message = '';
 $error = '';
 
-// Lấy dữ liệu từ database
+// Get data from database
 try {
     $db = new VisionDriveDatabase();
     $courses = $db->getCourses();
     $campuses = $db->getCampuses();
 } catch (Exception $e) {
-    // Fallback data nếu database lỗi
+    // Fallback data if database error
     $courses = [
         ['id' => 1, 'name' => 'Forklift Operator', 'description' => 'Basic forklift training', 'duration' => '8 hours', 'price' => 350],
         ['id' => 2, 'name' => 'Forklift Refresher', 'description' => 'Refresher course', 'duration' => '4 hours', 'price' => 180],
@@ -33,37 +33,28 @@ try {
     ];
 }
 
-// Xử lý form submit
+// Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if (isset($_POST['step']) && $_POST['step'] == '1') {
-        // Step 1: Chọn schedule date
+        // Step 1: Select schedule (includes date, course, campus)
+        $selectedSchedule = (int)$_POST['schedule_id'];
+        $selectedCourse = (int)$_POST['course_id'];
+        $selectedCampus = (int)$_POST['campus_id'];
         $selectedDate = $_POST['selected_date'] ?? '';
         
-        if ($selectedDate) {
+        if ($selectedSchedule && $selectedCourse && $selectedCampus && $selectedDate) {
             $step = 2;
+            $_SESSION['booking_schedule'] = $selectedSchedule;
+            $_SESSION['booking_course'] = $selectedCourse;
+            $_SESSION['booking_campus'] = $selectedCampus;
             $_SESSION['booking_date'] = $selectedDate;
         } else {
-            $error = 'Please select a training date';
+            $error = 'Please select a training session';
         }
         
     } elseif (isset($_POST['step']) && $_POST['step'] == '2') {
-        // Step 2: Chọn course và campus cho ngày đã chọn
-        $selectedCourse = (int)$_POST['course_id'];
-        $selectedCampus = (int)$_POST['campus_id'];
-        $selectedSchedule = (int)$_POST['schedule_id'];
-        
-        if ($selectedCourse && $selectedCampus && $selectedSchedule) {
-            $step = 3;
-            $_SESSION['booking_course'] = $selectedCourse;
-            $_SESSION['booking_campus'] = $selectedCampus;
-            $_SESSION['booking_schedule'] = $selectedSchedule;
-        } else {
-            $error = 'Please select course, campus and schedule';
-        }
-        
-    } elseif (isset($_POST['step']) && $_POST['step'] == '3') {
-        // Step 3: Điền thông tin cá nhân và submit
+        // Step 2: Fill personal info and submit
         
         $name = trim($_POST['name']);
         $email = trim($_POST['email']);
@@ -78,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $error = 'Please enter a valid email address';
         } else {
-            // Xử lý upload files
+            // Handle file uploads
             $uploadedFiles = [];
             if (!empty($_FILES['documents']['name'][0])) {
                 $uploadDir = 'uploads/documents/';
@@ -109,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
             
-            // Lưu booking vào database
+            // Save booking to database
             try {
                 $bookingData = [
                     'student_name' => $name,
@@ -127,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $bookingId = $result['booking_id'];
                     $userId = $result['user_id'];
                     
-                    // Lưu thông tin files vào database
+                    // Save file info to database
                     foreach ($uploadedFiles as $file) {
                         $db->saveDocument([
                             'user_id' => $userId,
@@ -137,7 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ]);
                     }
                     
-                    $step = 4;
+                    $step = 3;
                     $confirmationCode = 'VD' . str_pad($bookingId, 4, '0', STR_PAD_LEFT);
                     $_SESSION['booking_confirmation'] = $confirmationCode;
                     $_SESSION['booking_name'] = $name;
@@ -153,7 +144,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Helper function để tìm course/campus by ID
+// Helper function to find course/campus by ID
 function findById($array, $id) {
     foreach ($array as $item) {
         if ($item['id'] == $id) {
@@ -526,7 +517,7 @@ function findById($array, $id) {
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 10px;
+            gap: 8px;
             margin-top: 20px;
         }
 
@@ -537,69 +528,176 @@ function findById($array, $id) {
             padding: 10px;
             background: #f8f9fa;
             border-radius: 5px;
+            font-size: 14px;
         }
 
         .calendar-day {
-            aspect-ratio: 1;
             border: 2px solid #e0e0e0;
             border-radius: 8px;
+            background: white;
+            min-height: 120px;
+            padding: 8px;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
             transition: all 0.3s;
-            background: white;
-            min-height: 80px;
         }
 
         .calendar-day:hover:not(.disabled):not(.past) {
             border-color: var(--primary-blue);
-            background: #f0fbff;
-            transform: scale(1.05);
-        }
-
-        .calendar-day.selected {
-            border-color: var(--primary-blue);
-            background: var(--primary-blue);
-            color: white;
+            box-shadow: 0 2px 8px rgba(0, 188, 212, 0.15);
         }
 
         .calendar-day.disabled {
             background: #f5f5f5;
-            color: #ccc;
-            cursor: not-allowed;
+            opacity: 0.5;
         }
 
         .calendar-day.past {
             background: #fafafa;
-            color: #999;
-            cursor: not-allowed;
-        }
-
-        .calendar-day.has-sessions {
-            border-color: #4caf50;
-            background: #e8f5e9;
-        }
-
-        .calendar-day.has-sessions:hover {
-            background: #c8e6c9;
+            opacity: 0.6;
         }
 
         .day-number {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 8px;
         }
 
-        .day-sessions {
+        .calendar-day.past .day-number {
+            color: #999;
+        }
+
+        .day-courses {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            overflow-y: auto;
+            max-height: 200px;
+        }
+
+        .course-item {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            border: 2px solid #2196f3;
+            border-radius: 6px;
+            padding: 6px 8px;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+            position: relative;
             font-size: 11px;
-            margin-top: 5px;
+            line-height: 1.4;
+        }
+
+        .course-item:hover {
+            background: linear-gradient(135deg, #bbdefb, #90caf9);
+            border-color: #1976d2;
+        }
+
+        .course-item.selected {
+            background: linear-gradient(135deg, #4caf50, #66bb6a);
+            border-color: #2e7d32;
+            color: white;
+        }
+
+        .course-item.selected::before {
+            content: '✓';
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 16px;
+            height: 16px;
+            background: white;
             color: #4caf50;
-            font-weight: 500;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 11px;
+        }
+
+        .course-name {
+            font-weight: 600;
+            margin-bottom: 2px;
+            font-size: 11px;
+        }
+
+        .course-location {
+            font-size: 10px;
+            opacity: 0.9;
+            margin-bottom: 2px;
+        }
+
+        .course-spots {
+            font-size: 10px;
+            opacity: 0.9;
+        }
+
+        .course-details div {
+            margin-bottom: 2px;
+        }
+
+        .no-courses {
+            font-size: 10px;
+            color: #999;
+            text-align: center;
+            padding: 10px 5px;
+            font-style: italic;
         }
 
         .schedule-selection {
             margin: 30px 0;
+        }
+
+        .filter-section {
+            margin: 30px 0;
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 8px;
+        }
+
+        .filter-section h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text-dark);
+        }
+
+        .filter-controls-inline {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 20px;
+            align-items: end;
+        }
+
+        .selected-date-display {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #e3f2fd;
+            border-left: 4px solid var(--primary-blue);
+            border-radius: 5px;
+        }
+
+        .selected-date-display h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .selection-info {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .info-message {
+            background: #e3f2fd;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: #1565c0;
+            font-size: 14px;
+            border-left: 4px solid var(--primary-blue);
         }
 
         .filter-controls {
@@ -779,24 +877,25 @@ function findById($array, $id) {
     <!-- Progress Bar -->
     <div class="progress-container">
         <div class="progress-bar">
-            <div class="progress-fill" style="width: <?= ($step / 4) * 100 ?>%;"></div>
+            <div class="progress-fill" style="width: <?= ($step / 3) * 100 ?>%;"></div>
         </div>
     </div>
 
     <!-- Main Content -->
     <main class="main-content">
         <?php if ($step == 1): ?>
-            <!-- Step 1: Choose Training Date -->
+            <!-- Step 1: Choose Date and Schedule -->
             <div class="step-container">
                 <div class="step-header">
-                    <h2 class="step-title">Choose Your Training Date</h2>
-                    <p class="step-subtitle">Step 1 of 4</p>
+                    <h2 class="step-title">Choose Your Training Schedule</h2>
+                    <p class="step-subtitle">Step 1 of 3</p>
                 </div>
 
                 <?php if ($error): ?>
                     <div class="error"><?= htmlspecialchars($error) ?></div>
                 <?php endif; ?>
 
+                <!-- Calendar -->
                 <div class="calendar-container">
                     <div class="calendar-header">
                         <button type="button" id="prevMonth" class="calendar-nav-btn">← Previous</button>
@@ -806,64 +905,57 @@ function findById($array, $id) {
                     <div id="calendar" class="calendar-grid"></div>
                 </div>
 
-                <form method="POST" id="dateForm">
+                <!-- Filter Controls -->
+                <div class="filter-section">
+                    <h3>Filter by:</h3>
+                    <div class="filter-controls-inline">
+                        <div class="form-group">
+                            <label class="form-label">Course Type</label>
+                            <select id="filterCourse" class="form-select">
+                                <option value="">All Courses</option>
+                                <?php foreach ($courses as $course): ?>
+                                    <option value="<?= $course['id'] ?>"><?= htmlspecialchars($course['name']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Location</label>
+                            <select id="filterCampus" class="form-select">
+                                <option value="">All Locations</option>
+                                <?php foreach ($campuses as $campus): ?>
+                                    <option value="<?= $campus['id'] ?>"><?= htmlspecialchars($campus['name']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <button type="button" id="applyFilters" class="btn btn-secondary">Apply Filters</button>
+                    </div>
+                </div>
+
+                <!-- Available Sessions -->
+                <div class="schedule-selection">
+                    <div class="selection-info">
+                        <p id="selectionMessage" class="info-message">
+                            👆 Select a training session from the calendar above by clicking on it. Selected sessions will show a green checkmark.
+                        </p>
+                    </div>
+                </div>
+
+                <form method="POST" id="scheduleFormStep1">
                     <input type="hidden" name="step" value="1">
+                    <input type="hidden" name="course_id" id="selectedCourseId" value="">
+                    <input type="hidden" name="campus_id" id="selectedCampusId" value="">
+                    <input type="hidden" name="schedule_id" id="selectedScheduleId" value="">
                     <input type="hidden" name="selected_date" id="selectedDate" value="">
                     
                     <div class="btn-container">
                         <div></div>
-                        <button type="submit" class="btn btn-primary" id="nextStepDateBtn" disabled>Continue with Selected Date</button>
+                        <button type="submit" class="btn btn-primary" id="nextStepBtn" disabled>Continue to Personal Details</button>
                     </div>
                 </form>
             </div>
 
         <?php elseif ($step == 2): ?>
-            <!-- Step 2: Choose Course and Schedule -->
-            <?php 
-            $selectedDate = $_SESSION['booking_date'] ?? date('Y-m-d');
-            ?>
-            <div class="step-container">
-                <div class="step-header">
-                    <h2 class="step-title">Choose Course & Schedule</h2>
-                    <p class="step-subtitle">Step 2 of 4</p>
-                </div>
-
-                <div class="booking-summary">
-                    <h3>Selected Date:</h3>
-                    <p><strong><?= date('l, F j, Y', strtotime($selectedDate)) ?></strong></p>
-                </div>
-
-                <?php if ($error): ?>
-                    <div class="error"><?= htmlspecialchars($error) ?></div>
-                <?php endif; ?>
-
-                <!-- Available Schedules for selected date -->
-                <div class="schedule-selection">
-                    <h3>Available Training Sessions</h3>
-                    <div id="scheduleLoading" class="loading-message" style="display: none;">
-                        <p>Loading available schedules...</p>
-                    </div>
-
-                    <div id="scheduleResults" class="schedule-results">
-                        <!-- Schedules will be loaded here via JavaScript -->
-                    </div>
-                </div>
-
-                <form method="POST" id="scheduleFormStep2">
-                    <input type="hidden" name="step" value="2">
-                    <input type="hidden" name="course_id" id="selectedCourseId" value="">
-                    <input type="hidden" name="campus_id" id="selectedCampusId" value="">
-                    <input type="hidden" name="schedule_id" id="selectedScheduleId" value="">
-                    
-                    <div class="btn-container">
-                        <a href="booking.php?step=1" class="btn btn-secondary">Back</a>
-                        <button type="submit" class="btn btn-primary" id="nextStepBtn" disabled>Continue</button>
-                    </div>
-                </form>
-            </div>
-
-        <?php elseif ($step == 3): ?>
-            <!-- Step 3: Personal Details -->
+            <!-- Step 2: Personal Details -->
             <?php 
             $selectedCourseData = findById($courses, $_SESSION['booking_course'] ?? 0);
             $selectedCampusData = findById($campuses, $_SESSION['booking_campus'] ?? 0);
@@ -872,7 +964,7 @@ function findById($array, $id) {
             <div class="step-container">
                 <div class="step-header">
                     <h2 class="step-title">Your Details</h2>
-                    <p class="step-subtitle">Step 3 of 4</p>
+                    <p class="step-subtitle">Step 2 of 3</p>
                 </div>
 
                 <div class="booking-summary">
@@ -888,7 +980,7 @@ function findById($array, $id) {
                 <?php endif; ?>
 
                 <form method="POST" enctype="multipart/form-data">
-                    <input type="hidden" name="step" value="3">
+                    <input type="hidden" name="step" value="2">
                     
                     <div class="form-group">
                         <label class="form-label">Full Name <span class="required">*</span></label>
@@ -930,14 +1022,14 @@ function findById($array, $id) {
                     </div>
 
                     <div class="btn-container">
-                        <a href="booking.php?step=2" class="btn btn-secondary">Back</a>
+                        <a href="booking.php?step=1" class="btn btn-secondary">Back</a>
                         <button type="submit" class="btn btn-primary">Submit Application</button>
                     </div>
                 </form>
             </div>
 
-        <?php elseif ($step == 4): ?>
-            <!-- Step 4: Success -->
+        <?php elseif ($step == 3): ?>
+            <!-- Step 3: Success -->
             <div class="step-container">
                 <div class="success-icon">✓</div>
                 <div class="step-header">
@@ -982,18 +1074,18 @@ function findById($array, $id) {
     <?php include 'includes/footer.php'; ?>
     
     <script>
-    // Calendar and Schedule Selection JavaScript
+    // Calendar with inline courses
     let selectedScheduleId = null;
-    let selectedDate = null;
     let currentMonth = new Date();
-    let availableDates = [];
+    let allSchedules = []; // Store all schedules
+    let filteredSchedules = []; // Store filtered schedules
+    let currentFilters = { course: '', campus: '' };
     
     // Load calendar when page loads (for step 1)
     document.addEventListener('DOMContentLoaded', function() {
         <?php if ($step == 1): ?>
         // Initialize calendar for step 1
-        loadAvailableDates();
-        renderCalendar();
+        loadAllSchedules();
         
         document.getElementById('prevMonth').addEventListener('click', function() {
             currentMonth.setMonth(currentMonth.getMonth() - 1);
@@ -1004,26 +1096,49 @@ function findById($array, $id) {
             currentMonth.setMonth(currentMonth.getMonth() + 1);
             renderCalendar();
         });
-        <?php endif; ?>
         
-        <?php if ($step == 2): ?>
-        // Load schedules for step 2
-        loadSchedulesForDate();
+        // Filter events
+        document.getElementById('applyFilters').addEventListener('click', function() {
+            currentFilters.course = document.getElementById('filterCourse').value;
+            currentFilters.campus = document.getElementById('filterCampus').value;
+            applyFilters();
+            renderCalendar();
+        });
         <?php endif; ?>
     });
     
-    function loadAvailableDates() {
-        // Fetch all available training dates from server
-        fetch('get-available-schedules.php?start_date=' + new Date().toISOString().split('T')[0])
+    function loadAllSchedules() {
+        // Fetch all available training sessions from server
+        const startDate = new Date();
+        const endDate = new Date();
+        endDate.setMonth(endDate.getMonth() + 3);
+        
+        fetch(`get-available-schedules.php?start_date=${startDate.toISOString().split('T')[0]}&end_date=${endDate.toISOString().split('T')[0]}`)
             .then(response => response.json())
             .then(data => {
                 if (data.success && data.schedules) {
-                    // Extract unique dates
-                    availableDates = [...new Set(data.schedules.map(s => s.session_date))];
+                    allSchedules = data.schedules;
+                    filteredSchedules = [...allSchedules];
                     renderCalendar();
                 }
             })
-            .catch(error => console.error('Error loading dates:', error));
+            .catch(error => console.error('Error loading schedules:', error));
+    }
+    
+    function applyFilters() {
+        filteredSchedules = allSchedules.filter(schedule => {
+            let matches = true;
+            
+            if (currentFilters.course && schedule.course_id != currentFilters.course) {
+                matches = false;
+            }
+            
+            if (currentFilters.campus && schedule.campus_id != currentFilters.campus) {
+                matches = false;
+            }
+            
+            return matches;
+        });
     }
     
     function renderCalendar() {
@@ -1076,292 +1191,89 @@ function findById($array, $id) {
                 dayElement.classList.add('past');
             }
             
-            // Check if date has sessions
-            if (availableDates.includes(dateString)) {
-                dayElement.classList.add('has-sessions');
-            }
-            
+            // Add day number
             const dayNumber = document.createElement('div');
             dayNumber.className = 'day-number';
             dayNumber.textContent = day;
             dayElement.appendChild(dayNumber);
             
-            if (availableDates.includes(dateString)) {
-                const sessions = document.createElement('div');
-                sessions.className = 'day-sessions';
-                sessions.textContent = '● Available';
-                dayElement.appendChild(sessions);
-            }
+            // Add courses for this day
+            const dayCourses = document.createElement('div');
+            dayCourses.className = 'day-courses';
             
-            // Add click handler
-            if (dayDate >= today && (availableDates.length === 0 || availableDates.includes(dateString))) {
-                dayElement.addEventListener('click', function() {
-                    selectDate(dateString, dayElement);
+            // Find schedules for this date
+            const daySchedules = filteredSchedules.filter(s => s.session_date === dateString);
+            
+            if (daySchedules.length > 0 && dayDate >= today) {
+                daySchedules.forEach(schedule => {
+                    const availableSpots = schedule.available_spots || (schedule.max_participants - schedule.current_participants);
+                    
+                    // Skip fully booked sessions
+                    if (availableSpots <= 0) return;
+                    
+                    const courseItem = document.createElement('div');
+                    courseItem.className = 'course-item';
+                    courseItem.dataset.scheduleId = schedule.session_id;
+                    courseItem.dataset.courseId = schedule.course_id;
+                    courseItem.dataset.campusId = schedule.campus_id;
+                    courseItem.dataset.date = dateString;
+                    
+                    courseItem.innerHTML = `
+                        <div class="course-name">${schedule.course_name}</div>
+                        <div class="course-location">${schedule.campus_name}</div>
+                        <div class="course-spots">${availableSpots} left</div>
+                    `;
+                    
+                    courseItem.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        selectCourse(schedule.session_id, schedule.course_id, schedule.campus_id, dateString, courseItem);
+                    });
+                    
+                    dayCourses.appendChild(courseItem);
                 });
+            } else if (dayDate >= today) {
+                const noCourses = document.createElement('div');
+                noCourses.className = 'no-courses';
+                noCourses.textContent = 'No sessions';
+                dayCourses.appendChild(noCourses);
             }
             
+            dayElement.appendChild(dayCourses);
             calendar.appendChild(dayElement);
         }
     }
     
-    function selectDate(dateString, element) {
+    function selectCourse(scheduleId, courseId, campusId, dateString, element) {
         // Remove previous selection
-        document.querySelectorAll('.calendar-day').forEach(day => {
-            day.classList.remove('selected');
+        document.querySelectorAll('.course-item').forEach(item => {
+            item.classList.remove('selected');
         });
         
-        // Add selection to clicked day
+        // Add selection to clicked course
         element.classList.add('selected');
-        
-        // Update hidden input and enable next button
-        document.getElementById('selectedDate').value = dateString;
-        document.getElementById('nextStepDateBtn').disabled = false;
-        selectedDate = dateString;
-    }
-    
-    function loadSchedulesForDate() {
-        const selectedDate = '<?= $_SESSION["booking_date"] ?? date("Y-m-d") ?>';
-        
-        const loadingDiv = document.getElementById('scheduleLoading');
-        const resultsDiv = document.getElementById('scheduleResults');
-        
-        // Show loading
-        loadingDiv.style.display = 'block';
-        resultsDiv.innerHTML = '';
-        
-        // Build URL with parameters
-        const url = `get-available-schedules.php?start_date=${selectedDate}&end_date=${selectedDate}`;
-        
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                loadingDiv.style.display = 'none';
-                
-                if (data.success && data.schedules.length > 0) {
-                    displaySchedulesForSelection(data.schedules);
-                } else {
-                    showNoSchedules();
-                }
-            })
-            .catch(error => {
-                console.error('Error loading schedules:', error);
-                loadingDiv.style.display = 'none';
-                showError('Failed to load schedules. Please try again.');
-            });
-    }
-    
-    function displaySchedulesForSelection(schedules) {
-        const resultsDiv = document.getElementById('scheduleResults');
-        let html = '';
-        
-        schedules.forEach(schedule => {
-            const date = new Date(schedule.session_date);
-            const formattedDate = date.toLocaleDateString('en-NZ', { 
-                weekday: 'long',
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-            });
-            
-            const availableSpots = schedule.available_spots || (schedule.max_capacity - schedule.enrolled_count);
-            let capacityClass = 'schedule-capacity';
-            let capacityText = `${availableSpots} spots available`;
-            
-            if (availableSpots <= 2) {
-                capacityClass += ' low';
-                capacityText = availableSpots === 0 ? 'Fully booked' : `Only ${availableSpots} spots left!`;
-            } else if (availableSpots >= 8) {
-                capacityText = 'Plenty of spots available';
-            }
-            
-            if (availableSpots === 0) {
-                capacityClass += ' full';
-            }
-            
-            html += `
-                <div class="schedule-card" data-schedule-id="${schedule.session_id}" 
-                     data-course-id="${schedule.course_id}" data-campus-id="${schedule.campus_id}"
-                     onclick="selectScheduleForBooking(${schedule.session_id}, ${schedule.course_id}, ${schedule.campus_id})">
-                    <div class="schedule-header">
-                        <div>
-                            <div class="schedule-date">${schedule.course_name}</div>
-                            <div class="schedule-time">Time: ${schedule.session_time}</div>
-                        </div>
-                    </div>
-                    <div class="schedule-details">
-                        <div class="schedule-detail">
-                            <strong>Duration:</strong> ${schedule.duration}
-                        </div>
-                        <div class="schedule-detail">
-                            <strong>Instructor:</strong> ${schedule.instructor}
-                        </div>
-                        <div class="schedule-detail">
-                            <strong>Location:</strong> ${schedule.campus_name}
-                        </div>
-                        <div class="schedule-detail">
-                            <strong>Price:</strong> ${schedule.price}
-                        </div>
-                    </div>
-                    <div class="${capacityClass}">
-                        ${capacityText}
-                    </div>
-                </div>
-            `;
-        });
-        
-        resultsDiv.innerHTML = html;
-    }
-    
-    function selectScheduleForBooking(scheduleId, courseId, campusId) {
-        // Remove previous selection
-        document.querySelectorAll('.schedule-card').forEach(card => {
-            card.classList.remove('selected');
-        });
-        
-        // Add selection to clicked card
-        const selectedCard = document.querySelector(`[data-schedule-id="${scheduleId}"]`);
-        if (selectedCard) {
-            selectedCard.classList.add('selected');
-        }
         
         // Update hidden inputs and enable next button
         document.getElementById('selectedScheduleId').value = scheduleId;
         document.getElementById('selectedCourseId').value = courseId;
         document.getElementById('selectedCampusId').value = campusId;
+        document.getElementById('selectedDate').value = dateString;
         document.getElementById('nextStepBtn').disabled = false;
         selectedScheduleId = scheduleId;
-    }
-    
-    function loadSchedules() {
-        const courseId = <?= $_SESSION['booking_course'] ?? 0 ?>;
-        const campusId = <?= $_SESSION['booking_campus'] ?? 0 ?>;
-        const startDate = document.getElementById('startDate').value;
-        const endDate = document.getElementById('endDate').value;
         
-        const loadingDiv = document.getElementById('scheduleLoading');
-        const resultsDiv = document.getElementById('scheduleResults');
-        
-        // Show loading
-        loadingDiv.style.display = 'block';
-        resultsDiv.innerHTML = '';
-        
-        // Build URL with parameters
-        const url = `get-available-schedules.php?course_id=${courseId}&campus_id=${campusId}&start_date=${startDate}&end_date=${endDate}`;
-        
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                loadingDiv.style.display = 'none';
-                
-                if (data.success && data.schedules.length > 0) {
-                    displaySchedules(data.schedules);
-                } else {
-                    showNoSchedules();
-                }
-            })
-            .catch(error => {
-                console.error('Error loading schedules:', error);
-                loadingDiv.style.display = 'none';
-                showError('Failed to load schedules. Please try again.');
-            });
-    }
-    
-    function displaySchedules(schedules) {
-        const resultsDiv = document.getElementById('scheduleResults');
-        let html = '';
-        
-        schedules.forEach(schedule => {
-            const date = new Date(schedule.session_date);
-            const formattedDate = date.toLocaleDateString('en-NZ', { 
-                weekday: 'long',
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-            });
-            
-            const availableSpots = schedule.available_spots || (schedule.max_capacity - schedule.enrolled_count);
-            let capacityClass = 'schedule-capacity';
-            let capacityText = `${availableSpots} spots available`;
-            
-            if (availableSpots <= 2) {
-                capacityClass += ' low';
-                capacityText = availableSpots === 0 ? 'Fully booked' : `Only ${availableSpots} spots left!`;
-            } else if (availableSpots >= 8) {
-                capacityText = 'Plenty of spots available';
-            }
-            
-            if (availableSpots === 0) {
-                capacityClass += ' full';
-            }
-            
-            html += `
-                <div class="schedule-card" data-schedule-id="${schedule.session_id}" onclick="selectSchedule(${schedule.session_id})">
-                    <div class="schedule-header">
-                        <div>
-                            <div class="schedule-date">${formattedDate}</div>
-                            <div class="schedule-time">Time: ${schedule.session_time}</div>
-                        </div>
-                    </div>
-                    <div class="schedule-details">
-                        <div class="schedule-detail">
-                            <strong>Duration:</strong> ${schedule.duration}
-                        </div>
-                        <div class="schedule-detail">
-                            <strong>Instructor:</strong> ${schedule.instructor}
-                        </div>
-                        <div class="schedule-detail">
-                            <strong>Location:</strong> ${schedule.campus_name}
-                        </div>
-                        <div class="schedule-detail">
-                            <strong>Price:</strong> ${schedule.price}
-                        </div>
-                    </div>
-                    <div class="${capacityClass}">
-                        ${capacityText}
-                    </div>
-                </div>
-            `;
-        });
-        
-        resultsDiv.innerHTML = html;
-    }
-    
-    function selectSchedule(scheduleId) {
-        // Remove previous selection
-        document.querySelectorAll('.schedule-card').forEach(card => {
-            card.classList.remove('selected');
-        });
-        
-        // Add selection to clicked card
-        const selectedCard = document.querySelector(`[data-schedule-id="${scheduleId}"]`);
-        if (selectedCard) {
-            selectedCard.classList.add('selected');
-        }
-        
-        // Update hidden input and enable next button
-        document.getElementById('selectedScheduleId').value = scheduleId;
-        document.getElementById('nextStepBtn').disabled = false;
-        selectedScheduleId = scheduleId;
+        // Update message
+        document.getElementById('selectionMessage').innerHTML = 
+            `✓ <strong>Selected!</strong> Click "Continue to Personal Details" to proceed.`;
+        document.getElementById('selectionMessage').style.background = '#c8e6c9';
+        document.getElementById('selectionMessage').style.borderLeftColor = '#4caf50';
+        document.getElementById('selectionMessage').style.color = '#2e7d32';
     }
     
     function showNoSchedules() {
-        const resultsDiv = document.getElementById('scheduleResults');
-        resultsDiv.innerHTML = `
-            <div class="no-schedules">
-                <div class="no-schedules-icon">📅</div>
-                <h3>No schedules available</h3>
-                <p>No training sessions found for the selected dates. Please try a different date range or contact us for alternative options.</p>
-            </div>
-        `;
+        // Not needed anymore as courses are in calendar
     }
     
     function showError(message) {
-        const resultsDiv = document.getElementById('scheduleResults');
-        resultsDiv.innerHTML = `
-            <div class="error">
-                ${message}
-            </div>
-        `;
+        // Not needed anymore as courses are in calendar
     }
     
     function addDocumentField() {
