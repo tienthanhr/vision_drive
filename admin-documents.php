@@ -618,7 +618,7 @@ function getFileIcon($type) {
                                     <td>
                                         <div class="action-buttons">
                                             <a href="uploads/documents/<?= urlencode($document['name']) ?>" class="action-btn btn-download" download>Download</a>
-                                            <a href="admin-delete-document.php?name=<?= urlencode($document['name']) ?>&csrf=<?= urlencode($_SESSION['csrf_token'] ?? '') ?>" class="action-btn btn-delete" onclick="return confirm('Delete this document? This cannot be undone.')">Delete</a>
+                                            <a href="admin-delete-document.php?name=<?= urlencode($document['name']) ?>" class="action-btn btn-delete">Delete</a>
                                         </div>
                                     </td>
                                 </tr>

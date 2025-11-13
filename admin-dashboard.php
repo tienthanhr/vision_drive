@@ -440,7 +440,7 @@ if ($searchTerm) {
                                     <td>
                                         <div class="action-buttons">
                                             <a href="admin-edit-schedule.php?id=<?= $session['session_id'] ?>" class="action-btn btn-edit">Edit</a>
-                                            <a href="admin-delete-schedule.php?id=<?= $session['session_id'] ?>" class="action-btn btn-delete" onclick="return confirm('Are you sure you want to delete this schedule?')">Delete</a>
+                                            <a href="admin-delete-schedule.php?id=<?= $session['session_id'] ?>" class="action-btn btn-delete">Delete</a>
                                         </div>
                                     </td>
                                 </tr>

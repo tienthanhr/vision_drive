@@ -445,7 +445,7 @@ if (isset($_GET['error'])) {
                                     <td>
                                         <div class="action-buttons">
                                             <a href="admin-edit-course.php?id=<?= $course['id'] ?>" class="action-btn btn-edit">Edit</a>
-                                            <a href="admin-delete-course.php?id=<?= $course['id'] ?>" class="action-btn btn-delete" onclick="return confirm('Are you sure you want to delete this course?')">Delete</a>
+                                            <a href="admin-delete-course.php?id=<?= $course['id'] ?>" class="action-btn btn-delete">Delete</a>
                                         </div>
                                     </td>
                                 </tr>
@@ -484,10 +484,7 @@ if (isset($_GET['error'])) {
                 alert('Please select at least one course to delete.');
                 return false;
             }
-            const action = document.querySelector('select[name="bulk_action"]').value;
-            if(action==='delete') return confirm('Delete selected courses? This may deactivate courses with related sessions.');
-            if(action==='restore') return confirm('Restore selected courses?');
-            return true;
+            return confirm('Are you sure you want to delete the selected courses? This action cannot be undone.');
         }
     </script>
 </body>

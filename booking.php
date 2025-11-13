@@ -894,18 +894,7 @@ function findById($array, $id) {
                 <?php if ($error): ?>
                     <div class="error"><?= htmlspecialchars($error) ?></div>
                 <?php endif; ?>
-
-                <!-- Calendar -->
-                <div class="calendar-container">
-                    <div class="calendar-header">
-                        <button type="button" id="prevMonth" class="calendar-nav-btn">← Previous</button>
-                        <h3 id="currentMonth" class="calendar-month-title"></h3>
-                        <button type="button" id="nextMonth" class="calendar-nav-btn">Next →</button>
-                    </div>
-                    <div id="calendar" class="calendar-grid"></div>
-                </div>
-
-                <!-- Filter Controls -->
+  <!-- Filter Controls -->
                 <div class="filter-section">
                     <h3>Filter by:</h3>
                     <div class="filter-controls-inline">
@@ -939,6 +928,17 @@ function findById($array, $id) {
                         </p>
                     </div>
                 </div>
+                <!-- Calendar -->
+                <div class="calendar-container">
+                    <div class="calendar-header">
+                        <button type="button" id="prevMonth" class="calendar-nav-btn">← Previous</button>
+                        <h3 id="currentMonth" class="calendar-month-title"></h3>
+                        <button type="button" id="nextMonth" class="calendar-nav-btn">Next →</button>
+                    </div>
+                    <div id="calendar" class="calendar-grid"></div>
+                </div>
+
+              
 
                 <form method="POST" id="scheduleFormStep1">
                     <input type="hidden" name="step" value="1">
@@ -998,18 +998,19 @@ function findById($array, $id) {
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Upload Documents</label>
+                        <label class="form-label">Upload Documents <span class="required">*</span></label>
                         
                         <div style="margin-bottom: 15px;">
-                            <label class="form-label" style="font-weight: 500; margin-bottom: 5px;">Document Type</label>
-                            <select name="document_type[]" class="form-select">
+                            <label class="form-label" style="font-weight: 500; margin-bottom: 5px;">Document Type <span class="required">*</span></label>
+                            <select name="document_type[]" class="form-select" required>
+                                <option value="">Select document type</option>
                                 <option value="id_card">ID Card</option>
                                 <option value="license">License</option>
                                 <option value="other">Other</option>
                             </select>
                         </div>
                         
-                        <input type="file" name="documents[]" class="form-input" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                        <input type="file" name="documents[]" class="form-input" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" required>
                         <small style="color: #6c757d; font-size: 14px;">Upload ID, license, or other required documents (PDF, JPG, PNG, DOC)</small>
                         
                         <div id="additionalDocs"></div>

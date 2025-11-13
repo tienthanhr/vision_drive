@@ -781,5 +781,117 @@ class VisionDriveDatabase {
             return ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()];
         }
     }
+    
+    public function getEnrolledStudentsBySession($sessionId) {
+        try {
+            $stmt = $this->db->prepare("
+                SELECT 
+                    u.user_id,
+                    CONCAT(u.first_name, ' ', u.last_name) as full_name,
+                    u.first_name,
+                    u.last_name,
+                    u.email,
+                    u.phone,
+                    u.region,
+                    b.booking_id,
+                    b.booking_date,
+                    b.status as booking_status,
+                    b.payment_status,
+                    b.confirmation_code,
+                    b.notes,
+                    c.course_name,
+                    ca.campus_name,
+                    ts.session_date,
+                    ts.start_time,
+                    ts.end_time,
+                    COUNT(d.document_id) as document_count
+                FROM bookings b
+                INNER JOIN users u ON b.user_id = u.user_id
+                INNER JOIN training_sessions ts ON b.session_id = ts.session_id
+                INNER JOIN courses c ON ts.course_id = c.course_id
+                INNER JOIN campuses ca ON ts.campus_id = ca.campus_id
+                LEFT JOIN documents d ON u.user_id = d.user_id
+                WHERE b.session_id = ?
+                GROUP BY b.booking_id, u.user_id, c.course_name, ca.campus_name, ts.session_date, ts.start_time, ts.end_time
+                ORDER BY b.booking_date DESC
+            ");
+            $stmt->execute([$sessionId]);
+            return $stmt->fetchAll();
+        } catch (Exception $e) {
+            error_log("Database error in getEnrolledStudentsBySession: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    public function getSessionDetails($sessionId) {
+        try {
+            $stmt = $this->db->prepare("
+                SELECT 
+                    ts.session_id,
+                    ts.session_date,
+                    ts.start_time,
+                    ts.end_time,
+                    ts.instructor_name,
+                    ts.max_participants,
+                    ts.current_participants,
+                    ts.status,
+                    c.course_id,
+                    c.course_name,
+                    c.description as course_description,
+                    c.duration_hours,
+                    c.price,
+                    ca.campus_id,
+                    ca.campus_name,
+                    ca.address,
+                    ca.city,
+                    ca.region
+                FROM training_sessions ts
+                INNER JOIN courses c ON ts.course_id = c.course_id
+                INNER JOIN campuses ca ON ts.campus_id = ca.campus_id
+                WHERE ts.session_id = ?
+            ");
+            $stmt->execute([$sessionId]);
+            return $stmt->fetch();
+        } catch (Exception $e) {
+            error_log("Database error in getSessionDetails: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    public function removeStudentFromSession($userId, $sessionId) {
+        try {
+            $this->db->beginTransaction();
+            
+            // Get booking info first
+            $stmt = $this->db->prepare("SELECT booking_id FROM bookings WHERE user_id = ? AND session_id = ?");
+            $stmt->execute([$userId, $sessionId]);
+            $booking = $stmt->fetch();
+            
+            if (!$booking) {
+                $this->db->rollBack();
+                return ['success' => false, 'message' => 'Booking not found'];
+            }
+            
+            // Delete the booking
+            $stmt = $this->db->prepare("DELETE FROM bookings WHERE booking_id = ?");
+            $stmt->execute([$booking['booking_id']]);
+            
+            // Decrease current_participants count
+            $stmt = $this->db->prepare("
+                UPDATE training_sessions 
+                SET current_participants = GREATEST(0, current_participants - 1) 
+                WHERE session_id = ?
+            ");
+            $stmt->execute([$sessionId]);
+            
+            $this->db->commit();
+            return ['success' => true, 'message' => 'Student removed from session successfully'];
+            
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            error_log("Database error in removeStudentFromSession: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
+        }
+    }
 }
 ?>

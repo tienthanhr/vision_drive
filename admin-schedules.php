@@ -319,6 +319,26 @@ if (isset($allowedSorts[$sort])) {
         .action-buttons {
             display: flex;
             gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .btn-view {
+            background: #00bcd4;
+            color: white;
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+        
+        .btn-view:hover {
+            background: #0097a7;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0,188,212,0.3);
         }
 
         /* Responsive */
@@ -390,10 +410,7 @@ if (isset($allowedSorts[$sort])) {
                         <a href="admin-add-schedule.php" class="add-btn">Add new schedule</a>
                     </div>
                 </div>
-                    </form>
-                </div>
-
-                <!-- Schedules Table -->
+                                <!-- Schedules Table -->
                 <form method="POST" onsubmit="return confirmBulkDelete();">
                     <?php csrf_input(); ?>
                     <input type="hidden" name="bulk_action" value="delete">
@@ -482,8 +499,14 @@ if (isset($allowedSorts[$sort])) {
                                     </td>
                                     <td>
                                         <div class="action-buttons">
+                                            <a href="admin-view-enrolled-students.php?session_id=<?= $schedule['session_id'] ?>" 
+                                               class="action-btn btn-view" 
+                                               title="View enrolled students"
+                                               style="background: #00bcd4; color: white; text-decoration: none; padding: 8px 12px; border-radius: 5px; font-size: 12px; font-weight: 600; display: inline-block; transition: all 0.3s ease;">
+                                                👥 Students (<?= $enrolled ?>)
+                                            </a>
                                             <a href="admin-edit-schedule.php?id=<?= $schedule['session_id'] ?>" class="action-btn btn-edit">Edit</a>
-                                            <a href="admin-delete-schedule.php?id=<?= $schedule['session_id'] ?>" class="action-btn btn-delete" onclick="return confirm('Are you sure you want to delete this schedule?')">Delete</a>
+                                            <a href="admin-delete-schedule.php?id=<?= $schedule['session_id'] ?>" class="action-btn btn-delete">Delete</a>
                                         </div>
                                     </td>
                                 </tr>
@@ -519,7 +542,11 @@ if (isset($allowedSorts[$sort])) {
                 return false;
             }
             return confirm('Delete selected schedules?');
-        }
-    </script>
+          }
+                     </script>
+                    </form>
+                </div>
+
+
 </body>
 </html>

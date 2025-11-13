@@ -419,7 +419,7 @@ if (isset($allowedSorts[$sort])) {
                                             <td>
                                                 <div class="action-buttons">
                                                     <a href="admin-edit-campus.php?id=<?= $campus['id'] ?>" class="action-btn btn-edit">Edit</a>
-                                                    <a href="admin-delete-campus.php?id=<?= $campus['id'] ?>" class="action-btn btn-delete" onclick="return confirm('Are you sure you want to delete this campus?')">Delete</a>
+                                                    <a href="admin-delete-campus.php?id=<?= $campus['id'] ?>" class="action-btn btn-delete">Delete</a>
                                                 </div>
                                             </td>
                                         </tr>
@@ -456,13 +456,10 @@ if (isset($allowedSorts[$sort])) {
         function confirmBulkDelete(){
             const any = document.querySelectorAll('input[name="selected_ids[]"]:checked').length>0;
             if(!any){
-                alert('Please select at least one campus to process.');
+                alert('Please select at least one campus to delete.');
                 return false;
             }
-            const action = document.querySelector('select[name="bulk_action"]').value;
-            if(action==='delete') return confirm('Delete/Deactivate selected campuses? Campuses with sessions will be deactivated.');
-            if(action==='restore') return confirm('Restore selected campuses?');
-            return true;
+            return confirm('Are you sure you want to delete the selected campuses? Campuses with training sessions will be deactivated instead of deleted.');
         }
     </script>
 </body>

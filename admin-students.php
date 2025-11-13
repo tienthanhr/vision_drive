@@ -90,14 +90,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $conn = $db->getConnection();
             $placeholders = implode(',', array_fill(0, count($ids), '?'));
-            // Soft-delete (mark inactive) to avoid breaking references
-            $stmt = $conn->prepare("UPDATE users SET status = 'inactive' WHERE user_id IN ($placeholders)");
+            // Hard delete - permanently remove students
+            $stmt = $conn->prepare("DELETE FROM users WHERE user_id IN ($placeholders)");
             $ok = $stmt->execute(array_map('intval', $ids));
             $count = $ok ? $stmt->rowCount() : 0;
             header('Location: admin-students.php?success=' . urlencode("Deleted {$count} student(s)"));
             exit();
         } catch (Exception $e) {
-            header('Location: admin-students.php?error=' . urlencode('Bulk update failed'));
+            header('Location: admin-students.php?error=' . urlencode('Bulk delete failed'));
             exit();
         }
     } else {
@@ -413,15 +413,6 @@ if (isset($allowedSorts[$sort])) {
                             <input type="hidden" name="bulk_action" value="delete">
                             <button type="submit" class="btn btn-sm btn-danger">Delete selected</button>
                         </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <?php $statusFilter = $_GET['status'] ?? 'all'; ?>
-                            <label for="statusFilter" class="mb-0">Status</label>
-                            <select id="statusFilter" class="form-select form-select-sm w-auto" onchange="onChangeStatusFilter(this.value)">
-                                <option value="all" <?= $statusFilter==='all'?'selected':'' ?>>All</option>
-                                <option value="active" <?= $statusFilter==='active'?'selected':'' ?>>Active</option>
-                                <option value="inactive" <?= $statusFilter==='inactive'?'selected':'' ?>>Inactive</option>
-                            </select>
-                        </div>
                     </div>
                     <div class="table-responsive">
                 <table class="students-table table table-hover align-middle">
@@ -505,7 +496,7 @@ if (isset($allowedSorts[$sort])) {
                                             </button>
                                             <a href="admin-upload-document.php?user_id=<?= $student['user_id'] ?>" class="action-btn btn-success">Upload</a>
                                             <a href="admin-edit-student.php?id=<?= $student['user_id'] ?>" class="action-btn btn-edit">Edit</a>
-                                            <a href="admin-delete-student.php?id=<?= $student['user_id'] ?>&csrf=<?= urlencode($_SESSION['csrf_token'] ?? '') ?>" class="action-btn btn-delete" onclick="return confirm('Delete this student?')">Delete</a>
+                                            <a href="admin-delete-student.php?id=<?= $student['user_id'] ?>" class="action-btn btn-delete">Delete</a>
                                         </div>
                                     </td>
                                 </tr>
@@ -674,11 +665,6 @@ if (isset($allowedSorts[$sort])) {
     </div> <!-- End dashboard-container -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
     <script>
-        function onChangeStatusFilter(val){
-            const params = new URLSearchParams(window.location.search);
-            if (val==='all') { params.delete('status'); } else { params.set('status', val); }
-            window.location.search = params.toString();
-        }
         function toggleSelectAll(master){
             document.querySelectorAll('input[name="selected_ids[]"]').forEach(cb=>cb.checked = master.checked);
         }
@@ -688,7 +674,7 @@ if (isset($allowedSorts[$sort])) {
                 alert('Please select at least one student.');
                 return false;
             }
-            return confirm('Delete selected students?');
+            return confirm('Are you sure you want to permanently delete selected students? This action cannot be undone.');
         }
     </script>
 </body>
